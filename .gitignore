@@ -1,0 +1,6 @@
+node_modules/
+database.db
+.env
+.DS_Store
+check_db.js
+fix.js
