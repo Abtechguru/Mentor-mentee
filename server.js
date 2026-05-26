@@ -8,9 +8,10 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-const db = new sqlite3.Database('./database.db', (err) => {
+const dbPath = process.env.DB_PATH || './database.db';
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) console.error(err.message);
-  console.log('Connected to the SQLite database.');
+  console.log(`Connected to the SQLite database at ${dbPath}`);
 });
 
 // Initialize DB schema
