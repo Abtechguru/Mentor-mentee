@@ -134,15 +134,60 @@
   <div class="header glass-panel fade-in">
     <div class="logo">🏫 ABTECH TUTOR - HTML Mastery</div>
     <div class="user-info">
+      <span id="streakDisplay" style="display:none; color:#fbbf24; font-weight:bold; margin-right: 15px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);"></span>
       <span id="userNameDisplay"></span>
       <span id="userRoleDisplay"></span>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
 
-  <div id="adminPanel" class="admin-panel glass-panel fade-in" style="display:none">
-    <h3>👨‍🏫 Mentor Dashboard - All Students</h3>
-    <div id="studentsList" class="students-list"></div>
+  <div id="adminPanel" style="display:none">
+    <div class="glass-panel fade-in" style="display:flex; gap:15px; margin-bottom:20px; padding:15px; overflow-x:auto;">
+      <button class="stage-btn active" onclick="switchAdminTab('overview')" id="btn-admin-overview">📊 Dashboard Overview</button>
+      <button class="stage-btn" onclick="switchAdminTab('timetable')" id="btn-admin-timetable">📅 Timetable & Course Materials</button>
+      <button class="stage-btn" onclick="switchAdminTab('grading')" id="btn-admin-grading">📝 Assignments & Grading</button>
+    </div>
+
+    <div id="admin-tab-overview" class="admin-panel glass-panel fade-in">
+       <!-- Loaded dynamically -->
+    </div>
+
+    <div id="admin-tab-timetable" class="glass-panel fade-in" style="display:none; padding:30px;">
+       <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📅 Timetable & Course Materials</h3>
+       
+       <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); margin-bottom:30px;">
+         <h4 style="color:#38bdf8; margin-bottom:15px;">Add New Course Material to Timetable</h4>
+         <div style="display:flex; gap:15px; flex-wrap:wrap;">
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Select Student</label>
+             <select id="ttStudent" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);"></select>
+           </div>
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Date & Time</label>
+             <input type="datetime-local" id="ttDate" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:15px;">
+           <div style="flex:2; min-width:300px;">
+             <label style="color:#cbd5e1; font-size:14px;">Course Material / Topic Name</label>
+             <input type="text" id="ttTopic" placeholder="e.g. Introduction to CSS" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+           <div style="flex:2; min-width:300px;">
+             <label style="color:#cbd5e1; font-size:14px;">Resource Link (Zoom/PDF/Video)</label>
+             <input type="text" id="ttLink" placeholder="https://..." style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         <button onclick="addTimetableEntry()" style="margin-top:20px; padding:12px 25px; background:#4ade80; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">➕ Schedule Material</button>
+       </div>
+       
+       <h4 style="color:#fff; margin-bottom:15px;">Global Timetable</h4>
+       <div id="adminTimetableList" style="display:flex; flex-direction:column; gap:15px;"></div>
+    </div>
+    
+    <div id="admin-tab-grading" class="glass-panel fade-in" style="display:none; padding:30px;">
+       <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📝 Assignments & Grading</h3>
+       <div id="adminGradingContent" style="color:#cbd5e1;">Coming in next phase.</div>
+    </div>
   </div>
 
   <div id="studentContent" style="display:none">
@@ -616,11 +661,27 @@
     }
   }
 
+  let adminStudents = [];
+
+  function switchAdminTab(tabId) {
+    const tabs = ['overview', 'timetable', 'grading'];
+    tabs.forEach(t => {
+      document.getElementById('admin-tab-' + t).style.display = 'none';
+      document.getElementById('btn-admin-' + t).classList.remove('active');
+    });
+    document.getElementById('admin-tab-' + tabId).style.display = 'block';
+    document.getElementById('btn-admin-' + tabId).classList.add('active');
+    
+    if (tabId === 'overview') loadAdminPanel();
+    if (tabId === 'timetable') loadAdminTimetableTab();
+  }
+
   async function loadAdminPanel() {
     const res = await fetch('/api/admin/students');
     const data = await res.json();
+    adminStudents = data.students;
     
-    const adminPanel = document.getElementById('adminPanel');
+    const adminPanel = document.getElementById('admin-tab-overview');
     
     // Calculate global stats
     const totalStudents = data.students.length;
@@ -694,6 +755,81 @@
     });
   }
 
+  async function loadAdminTimetableTab() {
+    // Populate dropdown
+    const select = document.getElementById('ttStudent');
+    select.innerHTML = '<option value="">-- All Students --</option>';
+    adminStudents.forEach(s => {
+      select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+    });
+
+    // Fetch all schedules for admin
+    const res = await fetch(`/api/schedules/${currentUser.id}/admin`);
+    const data = await res.json();
+    
+    const list = document.getElementById('adminTimetableList');
+    list.innerHTML = '';
+    
+    if(data.schedules.length === 0) {
+      list.innerHTML = '<div style="color:#94a3b8;">No course materials scheduled yet.</div>';
+      return;
+    }
+    
+    data.schedules.forEach(s => {
+      const student = adminStudents.find(st => st.id === s.studentId);
+      const studentName = student ? student.name : 'All Students';
+      const color = s.attendance === 'present' ? '#4ade80' : '#f59e0b';
+      
+      list.innerHTML += `
+        <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:10px; border-left:4px solid #3b82f6; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="color:#38bdf8; font-size:18px;">${s.topic}</strong>
+            <div style="color:#e2e8f0; font-size:14px; margin-top:5px;">👤 Assigned to: <strong>${studentName}</strong></div>
+            <div style="color:#94a3b8; font-size:14px; margin-top:3px;">🕒 ${s.date}</div>
+            <a href="${s.link}" target="_blank" style="color:#fbbf24; text-decoration:none; display:inline-block; margin-top:8px; font-weight:600;">🔗 Open Material / Link</a>
+          </div>
+          <div style="text-align:right;">
+             <span style="color:${color}; font-weight:bold; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:5px; margin-bottom:10px; display:inline-block;">Attendance: ${s.attendance.toUpperCase()}</span><br>
+             <button onclick="deleteTimetableEntry(${s.id})" style="padding:5px 10px; background:#ef4444; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px;">🗑️ Delete</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  async function deleteTimetableEntry(id) {
+    if(!confirm("Are you sure you want to delete this course material from the timetable?")) return;
+    await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+    loadAdminTimetableTab();
+  }
+
+  async function addTimetableEntry() {
+    const studentId = document.getElementById('ttStudent').value;
+    const date = document.getElementById('ttDate').value;
+    const topic = document.getElementById('ttTopic').value;
+    const link = document.getElementById('ttLink').value;
+    
+    if(!topic || !date || !link) {
+      return alert('Please fill in Date, Topic, and Link!');
+    }
+    
+    // In this basic implementation, if studentId is empty, it assigns to a generic student ID, or we could handle broadcasting.
+    // Let's assume studentId is required for now.
+    if(!studentId) return alert('Please select a specific student to assign this material to.');
+
+    await fetch('/api/schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mentorId: currentUser.id, studentId, topic, date, link })
+    });
+    
+    alert('Course material successfully scheduled!');
+    document.getElementById('ttTopic').value = '';
+    document.getElementById('ttLink').value = '';
+    document.getElementById('ttDate').value = '';
+    loadAdminTimetableTab();
+  }
+
   async function loadStudentContent() {
     try {
       const res = await fetch(`/api/progress/${currentUser.id}`);
@@ -703,6 +839,13 @@
       userProgress = data.progress;
       allStages = data.stages;
       currentStageDetails = data.currentStageData;
+      
+      if (userProgress.streakCount > 0) {
+        document.getElementById('streakDisplay').style.display = 'inline-block';
+        document.getElementById('streakDisplay').textContent = `🔥 ${userProgress.streakCount} Day Streak!`;
+      } else {
+        document.getElementById('streakDisplay').style.display = 'none';
+      }
       
       renderStageButtons();
       renderStageContent();
