@@ -3,15 +3,16 @@
     <h3 style="color:#fff; font-size:24px;">🖥️ Pro IDE & Live Classroom</h3>
     <div style="display:flex; gap:10px;">
       <input type="text" id="ideClassLink" placeholder="Enter Zoom/Meet Link..." style="padding:10px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2); width:300px;">
-      <button onclick="loadClassroomIframe()" style="padding:10px 15px; background:#3b82f6; color:white; border:none; border-radius:8px; cursor:pointer;">Load Class</button>
+      <button onclick="loadClassroomIframe()" style="padding:10px 15px; background:#3b82f6; color:white; border:none; border-radius:8px; cursor:pointer;">🎥 Load Class</button>
+      <button onclick="document.getElementById('ideIframe').src='https://excalidraw.com'; document.getElementById('idePanelTitle').innerText='📝 Shared Whiteboard';" style="padding:10px 15px; background:#f59e0b; color:white; border:none; border-radius:8px; cursor:pointer;">📝 Whiteboard</button>
       <button onclick="toggleIdeLayout()" style="padding:10px 15px; background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:8px; cursor:pointer;">↕️ Toggle Expand</button>
     </div>
   </div>
 
   <div id="ideWorkspace" style="display:flex; gap:20px; height: calc(100% - 60px);">
-    <!-- Left: Classroom Video -->
+    <!-- Left: Classroom Video / Whiteboard -->
     <div id="ideVideoPanel" style="flex:1; background:rgba(0,0,0,0.4); border-radius:15px; border:1px solid rgba(255,255,255,0.1); overflow:hidden; display:flex; flex-direction:column;">
-      <div style="padding:10px; background:rgba(255,255,255,0.05); color:#94a3b8; font-size:14px; text-align:center;">🎥 Live Class Feed</div>
+      <div id="idePanelTitle" style="padding:10px; background:rgba(255,255,255,0.05); color:#94a3b8; font-size:14px; text-align:center;">🎥 Live Class Feed</div>
       <iframe id="ideIframe" src="about:blank" style="flex:1; width:100%; border:none;" allow="camera; microphone; fullscreen; display-capture"></iframe>
     </div>
 

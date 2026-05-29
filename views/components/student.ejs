@@ -114,6 +114,24 @@
     <div id="tab-schedule" style="display:none;" class="glass-panel fade-in">
        <div style="padding:30px;">
          <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📅 Class Schedule & Meetings</h3>
+         
+         <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); margin-bottom:30px; border-left:4px solid #f59e0b;">
+           <h4 style="color:#f59e0b; margin-bottom:15px;">Book a Live Session</h4>
+           <p style="color:#cbd5e1; font-size:14px; margin-bottom:15px;">Request a 1-on-1 session with your Mentor for coding help or math problem solving.</p>
+           <div style="display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
+             <div style="flex:1; min-width:200px;">
+               <label style="color:#cbd5e1; font-size:14px;">Date & Time</label>
+               <input type="datetime-local" id="bookDate" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+             </div>
+             <div style="flex:2; min-width:250px;">
+               <label style="color:#cbd5e1; font-size:14px;">Topic / Help Needed</label>
+               <input type="text" id="bookTopic" placeholder="e.g. Help with HTML Forms" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+             </div>
+             <button onclick="requestSession()" style="padding:12px 25px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; height:fit-content; box-shadow:0 4px 15px rgba(245, 158, 11, 0.3);">📅 Request Session</button>
+           </div>
+         </div>
+         
+         <h4 style="color:#fff; margin-bottom:15px;">My Upcoming Classes</h4>
          <div id="scheduleList" style="display:flex; flex-direction:column; gap:15px;">
             <!-- Schedules go here -->
          </div>

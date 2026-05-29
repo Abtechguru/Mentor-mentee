@@ -1607,5 +1607,85 @@
     btn.innerHTML = '📧 Generate Weekly Family Summaries';
     btn.disabled = false;
   }
+  async function requestSession() {
+    const date = document.getElementById('bookDate').value;
+    const topic = document.getElementById('bookTopic').value;
+    
+    if(!date || !topic) return alert('Please provide date and topic');
+    
+    if(!currentUser.mentorId) {
+       return alert('You must assign a mentor in your profile first!');
+    }
+
+    await fetch('/api/schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mentorId: currentUser.mentorId, studentId: currentUser.id, topic, date, link: 'Pending Mentor Approval', attendance: 'requested' })
+    });
+    
+    alert('Session requested successfully! Your mentor will review it.');
+    document.getElementById('bookDate').value = '';
+    document.getElementById('bookTopic').value = '';
+    
+    // Refresh student schedule tab if possible
+    const btn = document.getElementById('btn-schedule');
+    if(btn) btn.click();
+  }
+
+  function toggleNotifications() {
+    const dropdown = document.getElementById('notifDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'flex' : 'none';
+  }
+
+  async function loadNotifications() {
+    try {
+      const list = document.getElementById('notifList');
+      const badge = document.getElementById('notifBadge');
+      list.innerHTML = '';
+      let notifCount = 0;
+      
+      if(currentUser.role === 'admin') {
+         // Mentor Notifications
+         const res = await fetch(`/api/schedules/${currentUser.id}/admin`);
+         const data = await res.json();
+         
+         const pendingSchedules = (data.schedules || []).filter(s => s.attendance === 'requested');
+         pendingSchedules.forEach(s => {
+            notifCount++;
+            list.innerHTML += `<div style="padding:10px; background:rgba(245,158,11,0.2); border-radius:8px; border-left:3px solid #f59e0b;">📅 Mentee ${s.studentName || 'Student'} requested a session for ${new Date(s.date).toLocaleDateString()}</div>`;
+         });
+         
+         const pendingGrades = (data.submissions || []).filter(s => s.grade === null);
+         if(pendingGrades.length > 0) {
+            notifCount++;
+            list.innerHTML += `<div style="padding:10px; background:rgba(139,92,246,0.2); border-radius:8px; border-left:3px solid #8b5cf6;">📝 You have ${pendingGrades.length} ungraded assignments!</div>`;
+         }
+      } else {
+         // Student Notifications
+         const res = await fetch(`/api/schedules/${currentUser.id}/student`);
+         const data = await res.json();
+         
+         const upcomingClasses = (data.schedules || []).filter(s => s.attendance !== 'requested' && new Date(s.date) > new Date());
+         if(upcomingClasses.length > 0) {
+            notifCount++;
+            list.innerHTML += `<div style="padding:10px; background:rgba(16,185,129,0.2); border-radius:8px; border-left:3px solid #10b981;">🎥 You have ${upcomingClasses.length} upcoming live classes!</div>`;
+         }
+         
+         const newGrades = (data.submissions || []).filter(s => s.grade !== null);
+         if(newGrades.length > 0) {
+            notifCount++;
+            list.innerHTML += `<div style="padding:10px; background:rgba(56,189,248,0.2); border-radius:8px; border-left:3px solid #38bdf8;">🏆 You have received grades for ${newGrades.length} assignments.</div>`;
+         }
+      }
+      
+      if(notifCount > 0) {
+        badge.style.display = 'block';
+        badge.innerText = notifCount;
+      } else {
+        badge.style.display = 'none';
+        list.innerHTML = '<div style="color:#64748b;">No new notifications.</div>';
+      }
+    } catch(err) {}
+  }
 </script>
 </body>
