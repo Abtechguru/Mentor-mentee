@@ -237,6 +237,9 @@
         if(document.getElementById('profileBio')) {
            document.getElementById('profileBio').value = uData.user.bio || '';
         }
+        if(document.getElementById('profileExpertise')) {
+           document.getElementById('profileExpertise').value = uData.user.expertise || '';
+        }
       }
     } catch(e) {}
     
@@ -304,10 +307,11 @@
 
   async function saveStudentProfile() {
     const bio = document.getElementById('profileBio').value;
+    const expertise = document.getElementById('profileExpertise').value;
     const res = await fetch('/api/users/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: currentUser.id, bio, mentorId: currentUser.mentorId })
+      body: JSON.stringify({ userId: currentUser.id, bio, expertise, mentorId: currentUser.mentorId })
     });
     const data = await res.json();
     if(data.success) {
@@ -875,6 +879,11 @@
     const data = await res.json();
     adminStudents = data.students;
     
+    // Fetch assignments to show scores
+    const assignRes = await fetch(`/api/assignments/${currentUser.id}/admin`);
+    const assignData = await assignRes.json();
+    const allSubmissions = assignData.submissions || [];
+    
     const adminPanel = document.getElementById('admin-tab-overview');
     
     // Calculate global stats
@@ -933,6 +942,20 @@
         attemptsHtml = '<div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1); color:#64748b; font-size:13px;">No code submitted yet.</div>';
       }
       
+      let assignmentHtml = '';
+      const studentSubmissions = allSubmissions.filter(sub => sub.studentId === student.id);
+      if(studentSubmissions.length > 0) {
+        assignmentHtml = '<div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1);"><h4 style="color:#a78bfa; margin-bottom:10px; font-size:14px;">Assignments & Scores:</h4><div style="display:flex; flex-direction:column; gap:5px;">';
+        studentSubmissions.forEach(sub => {
+           const title = sub.assignments ? sub.assignments.title : 'Task';
+           const max = sub.assignments ? sub.assignments.max_grade : 100;
+           const score = sub.grade !== null ? `${sub.grade}/${max}` : 'Pending Grading';
+           const color = sub.grade !== null ? '#10b981' : '#fbbf24';
+           assignmentHtml += `<div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:8px 10px; border-radius:5px; font-size:13px; color:#e2e8f0;"><span>📄 ${title}</span> <strong style="color:${color};">${score}</strong></div>`;
+        });
+        assignmentHtml += '</div></div>';
+      }
+
       div.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:15px;">
           <div style="display:flex; gap:15px; align-items:center;">
@@ -941,6 +964,7 @@
               <strong style="font-size:18px; color:#f8fafc;">${student.name}</strong>
               <div style="color:#94a3b8; font-size:14px; margin-top:2px;">Currently on Stage: ${student.currentStage + 1}</div>
               ${student.family_name ? `<div style="color:#cbd5e1; font-size:12px; margin-top:2px;">👨‍👩‍👧 Family: ${student.family_name} (${student.family_email})</div>` : ''}
+              ${student.expertise ? `<div style="color:#4ade80; font-size:12px; margin-top:2px;">📚 Interests: ${student.expertise}</div>` : ''}
               ${student.bio ? `<div style="color:#94a3b8; font-size:12px; margin-top:2px;"><em>"${student.bio}"</em></div>` : ''}
             </div>
           </div>
@@ -955,6 +979,7 @@
         </div>
         
         ${attemptsHtml}
+        ${assignmentHtml}
       `;
       studentsList.appendChild(div);
     });
