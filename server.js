@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
+const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
 app.use(cors());
@@ -307,6 +308,85 @@ app.post('/api/submissions', async (req, res) => {
 app.put('/api/submissions/:id/grade', async (req, res) => {
   await supabase.from('submissions').update({ grade: req.body.grade, comment: req.body.comment }).eq('id', req.params.id);
   res.json({ success: true });
+});
+
+// AI Chat Integration
+app.post('/api/ask-ai', async (req, res) => {
+  try {
+    const { message, userRole, history } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set in .env' });
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const systemInstruction = `You are an expert AI coding mentor embedded in a structured learning dashboard. 
+Your role shifts based on who is active:
+
+WHEN ACTING AS MENTOR (Talking to a Student/Mentee):
+- Explain concepts clearly, using analogies before code examples
+- Never give full solutions immediately — scaffold with hints first
+- Always include: the concept name, a minimal working example, and one common mistake to avoid
+- After each explanation, ask one follow-up question to check understanding
+- Format code with inline comments explaining each key line
+- Label your responses: start with [MENTOR]
+
+WHEN ACTING AS MENTEE (student simulation for demo/testing, talking to an Admin/Mentor):
+- Ask one focused question at a time, as a beginner would
+- Show partial, slightly broken code and ask for guidance — do not write perfect code
+- Express confusion naturally ("I think I understand but...") to prompt deeper explanation
+- Label your responses: start with [MENTEE]
+
+DASHBOARD RULES (apply to all responses):
+- Always specify the programming language at the top of every code block
+- Keep explanations under 150 words before showing code
+- After code, always add a "Try This" line: one small modification the student can attempt
+- Track concepts introduced in the session and reference them when they reappear
+- If the student is stuck after 2 attempts, reveal the answer with a full explanation
+- Tone: encouraging, direct, zero jargon unless the jargon is being taught
+
+Current active user role is: ${userRole === 'admin' ? 'Admin/Mentor (You should act as MENTEE)' : 'Student/Mentee (You should act as MENTOR)'}.`;
+
+    const formattedHistory = (history || []).map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
+    }));
+
+    // Start a chat session
+    const chat = ai.chats.create({
+      model: 'gemini-2.5-flash',
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.7
+      }
+    });
+
+    // If there is history, we'd normally seed it, but for simplicity with @google/genai we can just send the whole history as an array if supported,
+    // or just append the recent message. With the new SDK, chat instances maintain their own state or can be seeded.
+    // To handle history explicitly:
+    let responseText = '';
+    if (formattedHistory.length > 0) {
+      // Just manually construct the prompt string for simplicity if chat history seeding is complex
+      const fullContext = history.map(h => `${h.role === 'user' ? 'User' : 'You'}: ${h.text}`).join('\\n') + `\\nUser: ${message}\\nYou:`;
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{ role: 'user', parts: [{ text: fullContext }] }],
+        config: { systemInstruction, temperature: 0.7 }
+      });
+      responseText = response.text;
+    } else {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{ role: 'user', parts: [{ text: message }] }],
+        config: { systemInstruction, temperature: 0.7 }
+      });
+      responseText = response.text;
+    }
+
+    res.json({ success: true, answer: responseText });
+  } catch (error) {
+    console.error('AI API Error:', error);
+    res.status(500).json({ error: 'Failed to communicate with AI' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
