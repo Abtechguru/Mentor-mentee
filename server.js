@@ -154,9 +154,15 @@ app.get('/api/admin/students', async (req, res) => {
 });
 
 app.get('/api/progress/:userId', async (req, res) => {
-  const { data: row, error } = await supabase.from('progress').select('*').eq('userId', req.params.userId).single();
-  if (error || !row) return res.status(404).json({ error: 'Progress not found' });
+  let { data: row, error } = await supabase.from('progress').select('*').eq('userId', req.params.userId).single();
   
+  // If progress not found, create it lazily
+  if (!row) {
+    const { data: newRow, error: insertErr } = await supabase.from('progress').insert([{ userId: req.params.userId }]).select().single();
+    if (insertErr || !newRow) return res.status(500).json({ error: 'Failed to initialize progress' });
+    row = newRow;
+  }
+
   const { data: dbStages } = await supabase.from('stages').select('*').order('orderIndex', { ascending: true });
   if (!dbStages || dbStages.length === 0) return res.json({ error: 'No stages found in database. Run /api/seed' });
 
