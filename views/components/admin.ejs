@@ -1,6 +1,7 @@
 <div id="adminPanel" style="display:none">
     <div class="glass-panel fade-in" style="display:flex; gap:15px; margin-bottom:20px; padding:15px; overflow-x:auto;">
       <button class="stage-btn active" onclick="switchAdminTab('overview')" id="btn-admin-overview">📊 Dashboard Overview</button>
+      <button class="stage-btn" onclick="switchAdminTab('profile')" id="btn-admin-profile">👤 Profile Settings</button>
       <button class="stage-btn" onclick="switchAdminTab('timetable')" id="btn-admin-timetable">📅 Timetable & Course Materials</button>
       <button class="stage-btn" onclick="switchAdminTab('grading')" id="btn-admin-grading">📝 Assignments & Grading</button>
       <button class="stage-btn" onclick="switchAdminTab('invoice')" id="btn-admin-invoice">🧾 Invoice & Receipts</button>
@@ -9,6 +10,28 @@
 
     <div id="admin-tab-overview" class="admin-panel glass-panel fade-in">
        <!-- Loaded dynamically -->
+    </div>
+
+    <div id="admin-tab-profile" class="glass-panel fade-in" style="display:none; padding:30px;">
+       <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">👤 Mentor Profile Setup</h3>
+       <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); margin-bottom:30px; max-width: 600px;">
+         <p style="color:#cbd5e1; margin-bottom:20px;">Update your details so your mentees can learn more about you.</p>
+         
+         <div style="margin-bottom:15px;">
+           <label style="color:#cbd5e1; font-size:14px;">Profile Picture URL</label>
+           <input type="text" id="adminProfilePic" placeholder="https://example.com/photo.jpg" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+         </div>
+         <div style="margin-bottom:15px;">
+           <label style="color:#cbd5e1; font-size:14px;">Expertise (e.g. Full Stack Developer, Marketing Pro)</label>
+           <input type="text" id="adminExpertise" placeholder="What are you teaching?" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+         </div>
+         <div style="margin-bottom:15px;">
+           <label style="color:#cbd5e1; font-size:14px;">Bio / Introduction</label>
+           <textarea id="adminBio" placeholder="Tell your mentees about yourself..." style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2); min-height:100px;"></textarea>
+         </div>
+         
+         <button onclick="saveAdminProfile()" style="padding:12px 25px; background:linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(99, 102, 241, 0.3); transition:transform 0.2s;">💾 Save Profile</button>
+       </div>
     </div>
 
     <div id="admin-tab-timetable" class="glass-panel fade-in" style="display:none; padding:30px;">

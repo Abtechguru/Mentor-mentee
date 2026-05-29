@@ -238,13 +238,25 @@ app.post('/api/setstage', async (req, res) => {
 });
 
 app.post('/api/users/profile', async (req, res) => {
-  const { userId, mentorId, profilePic } = req.body;
-  await supabase.from('users').update({ mentorId, profilePic }).eq('id', userId);
+  const { userId, mentorId, profilePic, bio, expertise } = req.body;
+  const updateData = {};
+  if (mentorId !== undefined) updateData.mentorId = mentorId;
+  if (profilePic !== undefined) updateData.profilePic = profilePic;
+  if (bio !== undefined) updateData.bio = bio;
+  if (expertise !== undefined) updateData.expertise = expertise;
+  
+  await supabase.from('users').update(updateData).eq('id', userId);
   res.json({ success: true });
 });
 
+app.get('/api/users/me', async (req, res) => {
+  const { userId } = req.query;
+  const { data: user } = await supabase.from('users').select('*').eq('id', userId).single();
+  res.json({ user });
+});
+
 app.get('/api/mentors', async (req, res) => {
-  const { data: mentors } = await supabase.from('users').select('id, name, profilePic').eq('role', 'admin');
+  const { data: mentors } = await supabase.from('users').select('id, name, profilePic, bio, expertise').eq('role', 'admin');
   res.json({ mentors });
 });
 
