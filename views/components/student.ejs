@@ -1,0 +1,98 @@
+<div id="studentContent" style="display:none">
+    <div class="glass-panel fade-in" style="display:flex; gap:15px; margin-bottom:20px; padding:15px; overflow-x:auto;">
+      <button class="stage-btn active" onclick="switchTab('sandbox')" id="btn-sandbox">💻 Code Sandbox</button>
+      <button class="stage-btn" onclick="switchTab('profile')" id="btn-profile">👤 Profile & Mentor</button>
+      <button class="stage-btn" onclick="switchTab('messages')" id="btn-messages">💬 Messages</button>
+      <button class="stage-btn" onclick="switchTab('schedule')" id="btn-schedule">📅 Schedule & Attendance</button>
+      <button class="stage-btn" onclick="switchTab('assignments')" id="btn-assignments">📝 Assignments</button>
+    </div>
+
+    <div id="tab-sandbox">
+      <div class="content-area">
+        <div class="stages-section glass-panel fade-in">
+          <h3>📚 Your Learning Journey</h3>
+          <div class="stage-buttons" id="stageButtons"></div>
+          <div class="question-box">
+            <div class="question-text" id="questionText"></div>
+            <div class="hint" id="hintText"></div>
+            <div class="hint" id="attemptsText" style="background:rgba(255,255,255,0.1); color:#fff; border:none; margin-top:5px;"></div>
+          </div>
+          <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="sandbox-section glass-panel fade-in">
+          <h3>💻 Code Playground (Write HTML Here)</h3>
+          <textarea id="codeEditor" class="code-editor" placeholder="Write your HTML code here..."></textarea>
+          <div class="action-buttons">
+            <button class="check-btn" onclick="checkAnswer()">✅ Test My Code</button>
+            <button class="print-btn" onclick="printResult()">🖨️ Print My Result (PDF)</button>
+            <button class="next-btn" onclick="nextStage()">➡️ Next Stage</button>
+          </div>
+          <div class="preview-area" id="previewArea">
+            <div class="preview-header">Live Preview</div>
+            <div id="livePreview"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="tab-profile" style="display:none;" class="glass-panel fade-in">
+       <div style="padding:30px; display:flex; gap:30px; flex-wrap:wrap;">
+         <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+           <h3 style="margin-bottom:20px; color:#fff; font-size:20px;">My Profile</h3>
+           <div style="text-align:center; margin-bottom:20px;">
+             <img id="profileImageDisplay" src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff" style="width:150px; height:150px; border-radius:50%; object-fit:cover; border:3px solid #6366f1; margin-bottom:15px;">
+             <br>
+             <label for="profilePicInput" style="background:#6366f1; color:white; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; display:inline-block; transition:transform 0.2s;">📷 Upload Picture</label>
+             <input type="file" id="profilePicInput" style="display:none;" accept="image/*" onchange="uploadProfilePic(event)">
+           </div>
+           <div style="color:#e2e8f0; font-size:16px;">
+             <p style="margin-bottom:10px;"><strong>Name:</strong> <span id="profileName"></span></p>
+             <p style="margin-bottom:10px;"><strong>Role:</strong> <span id="profileRole"></span></p>
+           </div>
+         </div>
+         
+         <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+           <h3 style="margin-bottom:20px; color:#fff; font-size:20px;">My Assigned Mentor</h3>
+           <div id="mentorDetails" style="color:#cbd5e1;">
+              Loading mentor details...
+           </div>
+         </div>
+       </div>
+    </div>
+    
+    <div id="tab-messages" style="display:none;" class="glass-panel fade-in">
+       <div style="display:flex; height:550px;">
+         <div style="flex:1; border-right:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; background:rgba(0,0,0,0.1); border-radius:15px;">
+           <div style="padding:20px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); border-radius:15px 15px 0 0;">
+             <h3 style="color:white; font-size:18px;">💬 Chat with Mentor</h3>
+           </div>
+           <div id="messageList" style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:15px;">
+             <!-- Messages go here -->
+           </div>
+           <div style="padding:15px; border-top:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); display:flex; gap:10px; border-radius:0 0 15px 15px;">
+             <input type="text" id="messageInput" placeholder="Type a message..." style="flex:1; padding:14px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; outline:none; font-size:15px;" onkeypress="if(event.key === 'Enter') sendMessage()">
+             <button onclick="sendMessage()" style="padding:14px 28px; background:#6366f1; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold; transition:transform 0.2s;">Send</button>
+           </div>
+         </div>
+       </div>
+    </div>
+    
+    <div id="tab-schedule" style="display:none;" class="glass-panel fade-in">
+       <div style="padding:30px;">
+         <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📅 Class Schedule & Meetings</h3>
+         <div id="scheduleList" style="display:flex; flex-direction:column; gap:15px;">
+            <!-- Schedules go here -->
+         </div>
+       </div>
+    </div>
+    
+    <div id="tab-assignments" style="display:none;" class="glass-panel fade-in">
+       <div style="padding:30px;">
+         <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📝 Assignments</h3>
+         <div id="assignmentList" style="display:flex; flex-direction:column; gap:20px;">
+            <!-- Assignments go here -->
+         </div>
+       </div>
+    </div>
+  </div>

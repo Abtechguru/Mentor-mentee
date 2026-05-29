@@ -1,0 +1,23 @@
+
+<%- include('partials/head') %>
+
+<%- include('components/auth') %>
+
+<div id="mainApp" class="main-container">
+  <div class="header glass-panel fade-in">
+    <div class="logo">🏫 ABTECH TUTOR - HTML Mastery</div>
+    <div class="user-info">
+      <span id="streakDisplay" style="display:none; color:#fbbf24; font-weight:bold; margin-right: 15px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);"></span>
+      <span id="userNameDisplay"></span>
+      <span id="userRoleDisplay"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <%- include('components/admin') %>
+  <%- include('components/student') %>
+</div>
+
+<%- include('components/scripts') %>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<div id="authSection" class="auth-container glass-panel fade-in">
+  <h2>🏫 ABTECH TUTOR</h2>
+  <div id="loginForm">
+    <input type="text" id="loginName" placeholder="Enter your name" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
+    <select id="loginRole">
+      <option value="student">Student (Mentee)</option>
+      <option value="admin">Admin (Mentor)</option>
+    </select>
+    <button onclick="login()">Login</button>
+    <div class="toggle-auth" onclick="showRegister()">New student? Register here</div>
+  </div>
+  <div id="registerForm" style="display:none">
+    <input type="text" id="regName" placeholder="Full Name" required>
+    <input type="password" id="regPassword" placeholder="Create Password" required>
+    <button onclick="register()">Register as Student</button>
+    <div class="toggle-auth" onclick="showLogin()">Back to Login</div>
+  </div>
+</div>
+
