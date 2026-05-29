@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABTECH TUTOR - HTML Skill Master | Learn, Code & Test Your Skills</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); 
+      color: #e2e8f0;
+      min-height: 100vh; 
+      padding: 20px; 
+    }
+    
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulseGlow { 0% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.5); } 50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); } 100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.5); } }
+    
+    .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    
+    /* Glassmorphism Containers */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .auth-container { max-width: 500px; margin: 80px auto; padding: 40px; }
+    .auth-container h2 { color: #f8fafc; margin-bottom: 30px; text-align: center; font-weight: 800; font-size: 32px; letter-spacing: -0.5px; }
+    .auth-container input, .auth-container select { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; background: rgba(0,0,0,0.2); color: white; font-size: 16px; transition: all 0.3s; }
+    .auth-container input:focus, .auth-container select:focus { outline: none; border-color: #6366f1; background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+    .auth-container button { width: 100%; padding: 15px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: transform 0.2s, box-shadow 0.2s; }
+    .auth-container button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4); }
+    .toggle-auth { text-align: center; margin-top: 20px; color: #94a3b8; cursor: pointer; transition: color 0.3s; font-weight: 600; }
+    .toggle-auth:hover { color: #fff; }
+    
+    .main-container { display: none; max-width: 1500px; margin: 0 auto; }
+    
+    .header { padding: 20px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .logo { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #38bdf8 0%, #818cf8 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; letter-spacing: -0.5px; }
+    .user-info { display: flex; gap: 20px; align-items: center; font-weight: 600; }
+    .logout-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 10px 24px; border-radius: 10px; color: #ef4444; cursor: pointer; transition: all 0.3s; font-weight: 600; }
+    .logout-btn:hover { background: #ef4444; color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transform: translateY(-1px); }
+    
+    .admin-panel { padding: 30px; margin-bottom: 20px; }
+    .students-list { display: grid; gap: 15px; margin-top: 20px; }
+    .student-card { background: rgba(0,0,0,0.2); padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s; }
+    .student-card:hover { transform: scale(1.01); border-color: rgba(255,255,255,0.2); }
+    
+    .content-area { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    
+    .stages-section { padding: 35px; display: flex; flex-direction: column; }
+    .stages-section h3 { font-size: 24px; margin-bottom: 25px; color: #fff; font-weight: 800; letter-spacing: -0.5px; }
+    
+    .stage-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
+    .stage-btn { padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #cbd5e1; cursor: pointer; transition: all 0.3s; font-weight: 600; font-size: 14px; display: flex; align-items: center; }
+    .stage-btn:hover:not(.locked) { background: rgba(255,255,255,0.1); color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .stage-btn.active { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border-color: transparent; animation: pulseGlow 2s infinite; }
+    .stage-btn.locked { opacity: 0.3; cursor: not-allowed; }
+    .stage-btn.completed { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3); color: #4ade80; }
+    
+    .question-box { background: rgba(0,0,0,0.2); padding: 30px; border-radius: 16px; margin-bottom: 20px; border-left: 4px solid #38bdf8; position: relative; overflow: hidden; }
+    .question-box::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(56, 189, 248, 0.05) 0%, transparent 100%); pointer-events: none; }
+    .question-text { font-size: 18px; margin-bottom: 20px; line-height: 1.7; color: #f1f5f9; position: relative; z-index: 1; }
+    .question-text strong { color: #38bdf8; font-size: 22px; display: block; margin-bottom: 10px; font-weight: 800; letter-spacing: -0.5px; }
+    .hint { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 14px 18px; border-radius: 12px; margin-top: 15px; font-size: 15px; font-weight: 600; display: flex; align-items: center; }
+    
+    .sandbox-section { padding: 35px; display: flex; flex-direction: column; }
+    .sandbox-section h3 { font-size: 24px; margin-bottom: 25px; color: #fff; font-weight: 800; letter-spacing: -0.5px; }
+    
+    .code-editor { width: 100%; height: 350px; font-family: 'Fira Code', monospace; font-size: 15px; padding: 25px; background: #0f172a; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; resize: vertical; line-height: 1.6; transition: border-color 0.3s; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
+    .code-editor:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 2px 10px rgba(0,0,0,0.5); }
+    
+    .preview-area { margin-top: 25px; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 0; min-height: 300px; background: #ffffff; color: #0f172a; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .preview-header { background: #f8fafc; padding: 12px 20px; font-weight: 600; font-size: 14px; color: #64748b; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; }
+    .preview-header::before { content: ''; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ef4444; box-shadow: 20px 0 0 #f59e0b, 40px 0 0 #22c55e; margin-right: 35px; }
+    #livePreview { padding: 25px; flex-grow: 1; overflow-y: auto; font-family: 'Inter', sans-serif; }
+    
+    .action-buttons { display: flex; gap: 15px; margin-top: 25px; }
+    .action-buttons button { padding: 14px 24px; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 15px; transition: all 0.3s; }
+    .check-btn { background: #22c55e; color: white; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); }
+    .check-btn:hover { background: #16a34a; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3); }
+    .print-btn { background: #f59e0b; color: white; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2); }
+    .print-btn:hover { background: #d97706; transform: translateY(-2px); }
+    .next-btn { background: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2); }
+    .next-btn:hover { background: #2563eb; transform: translateY(-2px); }
+    
+    .feedback { margin-top: 20px; padding: 16px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; display: none; }
+    .feedback.show { display: block; animation: fadeIn 0.4s ease-out; }
+    .feedback.success { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .feedback.error { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .feedback.info { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 5px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+    
+    @media (max-width: 1024px) { .content-area { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div id="authSection" class="auth-container glass-panel fade-in">
+  <h2>🏫 ABTECH TUTOR</h2>
+  <div id="loginForm">
+    <input type="text" id="loginName" placeholder="Enter your name" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
+    <select id="loginRole">
+      <option value="student">Student (Mentee)</option>
+      <option value="admin">Admin (Mentor)</option>
+    </select>
+    <button onclick="login()">Login</button>
+    <div class="toggle-auth" onclick="showRegister()">New student? Register here</div>
+  </div>
+  <div id="registerForm" style="display:none">
+    <input type="text" id="regName" placeholder="Full Name" required>
+    <input type="password" id="regPassword" placeholder="Create Password" required>
+    <button onclick="register()">Register as Student</button>
+    <div class="toggle-auth" onclick="showLogin()">Back to Login</div>
+  </div>
+</div>
+
+<div id="mainApp" class="main-container">
+  <div class="header glass-panel fade-in">
+    <div class="logo">🏫 ABTECH TUTOR - HTML Mastery</div>
+    <div class="user-info">
+      <span id="streakDisplay" style="display:none; color:#fbbf24; font-weight:bold; margin-right: 15px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);"></span>
+      <span id="userNameDisplay"></span>
+      <span id="userRoleDisplay"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div id="adminPanel" style="display:none">
+    <div class="glass-panel fade-in" style="display:flex; gap:15px; margin-bottom:20px; padding:15px; overflow-x:auto;">
+      <button class="stage-btn active" onclick="switchAdminTab('overview')" id="btn-admin-overview">📊 Dashboard Overview</button>
+      <button class="stage-btn" onclick="switchAdminTab('timetable')" id="btn-admin-timetable">📅 Timetable & Course Materials</button>
+      <button class="stage-btn" onclick="switchAdminTab('grading')" id="btn-admin-grading">📝 Assignments & Grading</button>
+      <button class="stage-btn" onclick="switchAdminTab('invoice')" id="btn-admin-invoice">🧾 Invoice & Receipts</button>
+    </div>
+
+    <div id="admin-tab-overview" class="admin-panel glass-panel fade-in">
+       <!-- Loaded dynamically -->
+    </div>
+
+    <div id="admin-tab-timetable" class="glass-panel fade-in" style="display:none; padding:30px;">
+       <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📅 Timetable & Course Materials</h3>
+       
+       <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); margin-bottom:30px;">
+         <h4 style="color:#38bdf8; margin-bottom:15px;">Add New Course Material to Timetable</h4>
+         <div style="display:flex; gap:15px; flex-wrap:wrap;">
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Select Student</label>
+             <select id="ttStudent" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);"></select>
+           </div>
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Date & Time</label>
+             <input type="datetime-local" id="ttDate" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:15px;">
+           <div style="flex:2; min-width:300px;">
+             <label style="color:#cbd5e1; font-size:14px;">Course Material / Topic Name</label>
+             <input type="text" id="ttTopic" placeholder="e.g. Introduction to CSS" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+           <div style="flex:2; min-width:300px;">
+             <label style="color:#cbd5e1; font-size:14px;">Resource Link (Zoom/PDF/Video)</label>
+             <input type="text" id="ttLink" placeholder="https://..." style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         <button onclick="addTimetableEntry()" style="margin-top:20px; padding:12px 25px; background:#4ade80; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">➕ Schedule Material</button>
+       </div>
+       
+       <h4 style="color:#fff; margin-bottom:15px;">Global Timetable</h4>
+       <div id="adminTimetableList" style="display:flex; flex-direction:column; gap:15px;"></div>
+    </div>
+    
+    <div id="admin-tab-grading" class="glass-panel fade-in" style="display:none; padding:30px;">
+       <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📝 Assignments & Grading</h3>
+       <div id="adminGradingContent" style="color:#cbd5e1;">Coming in next phase.</div>
+    </div>
+    
+    <div id="admin-tab-invoice" class="glass-panel fade-in" style="display:none; padding:30px;">
+       <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">🧾 Invoice & Receipts Generator</h3>
+       
+       <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); margin-bottom:30px;">
+         <h4 style="color:#38bdf8; margin-bottom:15px;">Generate New Document</h4>
+         
+         <div style="display:flex; gap:15px; flex-wrap:wrap;">
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Document Type</label>
+             <select id="invType" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+               <option value="Invoice">Invoice</option>
+               <option value="Receipt">Receipt</option>
+             </select>
+           </div>
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Client / Student Name</label>
+             <input type="text" id="invClient" placeholder="e.g. John Doe" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         
+         <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:15px;">
+           <div style="flex:2; min-width:300px;">
+             <label style="color:#cbd5e1; font-size:14px;">Work / Service Details</label>
+             <input type="text" id="invDetails" placeholder="e.g. 1 Month HTML Tutoring" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+           <div style="flex:1; min-width:150px;">
+             <label style="color:#cbd5e1; font-size:14px;">Amount ($)</label>
+             <input type="number" id="invAmount" placeholder="e.g. 500" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         
+         <button onclick="generateInvoicePDF()" style="margin-top:20px; padding:12px 25px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(245, 158, 11, 0.3); transition:transform 0.2s;">🖨️ Generate & Download PDF</button>
+       </div>
+    </div>
+  </div>
+
+  <div id="studentContent" style="display:none">
+    <div class="glass-panel fade-in" style="display:flex; gap:15px; margin-bottom:20px; padding:15px; overflow-x:auto;">
+      <button class="stage-btn active" onclick="switchTab('sandbox')" id="btn-sandbox">💻 Code Sandbox</button>
+      <button class="stage-btn" onclick="switchTab('profile')" id="btn-profile">👤 Profile & Mentor</button>
+      <button class="stage-btn" onclick="switchTab('messages')" id="btn-messages">💬 Messages</button>
+      <button class="stage-btn" onclick="switchTab('schedule')" id="btn-schedule">📅 Schedule & Attendance</button>
+      <button class="stage-btn" onclick="switchTab('assignments')" id="btn-assignments">📝 Assignments</button>
+    </div>
+
+    <div id="tab-sandbox">
+      <div class="content-area">
+        <div class="stages-section glass-panel fade-in">
+          <h3>📚 Your Learning Journey</h3>
+          <div class="stage-buttons" id="stageButtons"></div>
+          <div class="question-box">
+            <div class="question-text" id="questionText"></div>
+            <div class="hint" id="hintText"></div>
+            <div class="hint" id="attemptsText" style="background:rgba(255,255,255,0.1); color:#fff; border:none; margin-top:5px;"></div>
+          </div>
+          <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="sandbox-section glass-panel fade-in">
+          <h3>💻 Code Playground (Write HTML Here)</h3>
+          <textarea id="codeEditor" class="code-editor" placeholder="Write your HTML code here..."></textarea>
+          <div class="action-buttons">
+            <button class="check-btn" onclick="checkAnswer()">✅ Test My Code</button>
+            <button class="print-btn" onclick="printResult()">🖨️ Print My Result (PDF)</button>
+            <button class="next-btn" onclick="nextStage()">➡️ Next Stage</button>
+          </div>
+          <div class="preview-area" id="previewArea">
+            <div class="preview-header">Live Preview</div>
+            <div id="livePreview"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="tab-profile" style="display:none;" class="glass-panel fade-in">
+       <div style="padding:30px; display:flex; gap:30px; flex-wrap:wrap;">
+         <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+           <h3 style="margin-bottom:20px; color:#fff; font-size:20px;">My Profile</h3>
+           <div style="text-align:center; margin-bottom:20px;">
+             <img id="profileImageDisplay" src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff" style="width:150px; height:150px; border-radius:50%; object-fit:cover; border:3px solid #6366f1; margin-bottom:15px;">
+             <br>
+             <label for="profilePicInput" style="background:#6366f1; color:white; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; display:inline-block; transition:transform 0.2s;">📷 Upload Picture</label>
+             <input type="file" id="profilePicInput" style="display:none;" accept="image/*" onchange="uploadProfilePic(event)">
+           </div>
+           <div style="color:#e2e8f0; font-size:16px;">
+             <p style="margin-bottom:10px;"><strong>Name:</strong> <span id="profileName"></span></p>
+             <p style="margin-bottom:10px;"><strong>Role:</strong> <span id="profileRole"></span></p>
+           </div>
+         </div>
+         
+         <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+           <h3 style="margin-bottom:20px; color:#fff; font-size:20px;">My Assigned Mentor</h3>
+           <div id="mentorDetails" style="color:#cbd5e1;">
+              Loading mentor details...
+           </div>
+         </div>
+       </div>
+    </div>
+    
+    <div id="tab-messages" style="display:none;" class="glass-panel fade-in">
+       <div style="display:flex; height:550px;">
+         <div style="flex:1; border-right:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; background:rgba(0,0,0,0.1); border-radius:15px;">
+           <div style="padding:20px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); border-radius:15px 15px 0 0;">
+             <h3 style="color:white; font-size:18px;">💬 Chat with Mentor</h3>
+           </div>
+           <div id="messageList" style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:15px;">
+             <!-- Messages go here -->
+           </div>
+           <div style="padding:15px; border-top:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); display:flex; gap:10px; border-radius:0 0 15px 15px;">
+             <input type="text" id="messageInput" placeholder="Type a message..." style="flex:1; padding:14px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:white; outline:none; font-size:15px;" onkeypress="if(event.key === 'Enter') sendMessage()">
+             <button onclick="sendMessage()" style="padding:14px 28px; background:#6366f1; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold; transition:transform 0.2s;">Send</button>
+           </div>
+         </div>
+       </div>
+    </div>
+    
+    <div id="tab-schedule" style="display:none;" class="glass-panel fade-in">
+       <div style="padding:30px;">
+         <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📅 Class Schedule & Meetings</h3>
+         <div id="scheduleList" style="display:flex; flex-direction:column; gap:15px;">
+            <!-- Schedules go here -->
+         </div>
+       </div>
+    </div>
+    
+    <div id="tab-assignments" style="display:none;" class="glass-panel fade-in">
+       <div style="padding:30px;">
+         <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📝 Assignments</h3>
+         <div id="assignmentList" style="display:flex; flex-direction:column; gap:20px;">
+            <!-- Assignments go here -->
+         </div>
+       </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentUser = JSON.parse(localStorage.getItem('abtech_currentUser'));
+  let currentStageDetails = null; // Store fetched data
+  let allStages = [];
+  let userProgress = null;
+  
+  function switchTab(tabId) {
+    const tabs = ['sandbox', 'profile', 'messages', 'schedule', 'assignments'];
+    tabs.forEach(t => {
+      document.getElementById('tab-' + t).style.display = 'none';
+      document.getElementById('btn-' + t).classList.remove('active');
+    });
+    document.getElementById('tab-' + tabId).style.display = 'block';
+    document.getElementById('btn-' + tabId).classList.add('active');
+    
+    if (tabId === 'profile') loadProfileTab();
+    if (tabId === 'messages') loadMessagesTab();
+    if (tabId === 'schedule') loadScheduleTab();
+    if (tabId === 'assignments') loadAssignmentsTab();
+  }
+
+  async function loadScheduleTab() {
+    if(!currentUser.mentorId && currentUser.role !== 'admin') {
+      document.getElementById('scheduleList').innerHTML = '<div style="color:#f87171; font-weight:600;">⚠️ Please assign a mentor in your Profile tab to view schedules.</div>';
+      return;
+    }
+    
+    const res = await fetch(`/api/schedules/${currentUser.id}/${currentUser.role}`);
+    const data = await res.json();
+    const list = document.getElementById('scheduleList');
+    list.innerHTML = '';
+    
+    if(data.schedules.length === 0) {
+      list.innerHTML = '<div style="color:#94a3b8;">No upcoming classes scheduled yet.</div>';
+      return;
+    }
+    
+    data.schedules.forEach(s => {
+      let attendanceBtn = '';
+      if(s.attendance === 'pending' && currentUser.role === 'student') {
+         attendanceBtn = `<button onclick="markAttendance(${s.id}, 'present')" style="padding:10px 20px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:transform 0.2s;">✋ Mark Present</button>`;
+      } else {
+         const color = s.attendance === 'present' ? '#4ade80' : '#f59e0b';
+         attendanceBtn = `<span style="color:${color}; font-weight:800; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">Status: ${s.attendance.toUpperCase()}</span>`;
+      }
+      
+      list.innerHTML += `
+        <div style="background:rgba(0,0,0,0.2); padding:25px; border-radius:15px; border-left:5px solid #f59e0b; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+          <div>
+            <strong style="color:#f8fafc; font-size:20px;">${s.topic}</strong>
+            <div style="color:#cbd5e1; font-size:15px; margin-top:8px;">🕒 Scheduled Date: <strong>${s.date}</strong></div>
+            <a href="${s.link}" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600; padding:8px 15px; background:rgba(56, 189, 248, 0.1); border-radius:8px;">🔗 Join Video Meeting Link</a>
+          </div>
+          <div style="text-align:right;">
+             ${attendanceBtn}
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  async function markAttendance(id, status) {
+    await fetch(`/api/schedules/${id}/attendance`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attendance: status })
+    });
+    alert('Attendance successfully marked!');
+    loadScheduleTab();
+  }
+
+  async function loadAssignmentsTab() {
+    if(!currentUser.mentorId && currentUser.role !== 'admin') {
+      document.getElementById('assignmentList').innerHTML = '<div style="color:#f87171; font-weight:600;">⚠️ Please assign a mentor in your Profile tab to receive assignments.</div>';
+      return;
+    }
+    
+    const res = await fetch(`/api/assignments/${currentUser.id}/${currentUser.role}`);
+    const data = await res.json();
+    const list = document.getElementById('assignmentList');
+    list.innerHTML = '';
+    
+    if(data.assignments.length === 0) {
+      list.innerHTML = '<div style="color:#94a3b8;">No assignments posted yet. Enjoy your day!</div>';
+      return;
+    }
+    
+    data.assignments.forEach(task => {
+      const submission = data.submissions.find(s => s.assignmentId === task.id);
+      let statusHtml = '';
+      
+      if(submission) {
+         statusHtml = `
+           <div style="margin-top:20px; padding:20px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:12px;">
+             <strong style="color:#4ade80; font-size:18px;">✅ Successfully Submitted</strong>
+             ${submission.grade ? `<div style="margin-top:12px; color:#fff; font-size:16px;"><strong>Grade Received:</strong> <span style="color:#38bdf8;">${submission.grade}</span></div>` : '<div style="margin-top:10px; color:#cbd5e1;">Awaiting Grading...</div>'}
+             ${submission.comment ? `<div style="color:#94a3b8; font-style:italic; margin-top:10px; border-left:3px solid #6366f1; padding-left:10px;">"Mentor says: ${submission.comment}"</div>` : ''}
+           </div>
+         `;
+      } else {
+         statusHtml = `
+           <div style="margin-top:20px;">
+             <label style="background:#6366f1; color:white; padding:12px 20px; border-radius:10px; cursor:pointer; font-size:15px; font-weight:bold; display:inline-block; transition:transform 0.2s;">
+               📄 Upload Submission (PDF/Image)
+               <input type="file" style="display:none;" onchange="submitAssignment(event, ${task.id})">
+             </label>
+           </div>
+         `;
+      }
+      
+      list.innerHTML += `
+        <div style="background:rgba(0,0,0,0.2); padding:25px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#38bdf8; font-size:20px;">${task.title}</strong>
+            <span style="color:#f87171; font-size:14px; font-weight:800; background:rgba(239, 68, 68, 0.1); padding:8px 12px; border-radius:8px;">⏳ Due: ${task.dueDate}</span>
+          </div>
+          <p style="color:#e2e8f0; margin-top:15px; line-height:1.6; font-size:15px;">${task.description}</p>
+          ${statusHtml}
+        </div>
+      `;
+    });
+  }
+  
+  function submitAssignment(event, assignmentId) {
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64 = e.target.result;
+      
+      document.getElementById('assignmentList').innerHTML = '<div style="color:#38bdf8; font-weight:bold;">Uploading submission... please wait.</div>';
+      
+      await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignmentId, studentId: currentUser.id, fileData: base64, fileName: file.name })
+      });
+      alert('Assignment submitted successfully! Your mentor has been notified.');
+      loadAssignmentsTab();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function loadMessagesTab() {
+    if(!currentUser.mentorId && currentUser.role !== 'admin') {
+      document.getElementById('messageList').innerHTML = '<div style="text-align:center; color:#f87171; margin-top:20px; font-weight:600;">⚠️ Please assign a mentor in your Profile tab first before messaging.</div>';
+      return;
+    }
+    
+    const res = await fetch(`/api/messages/${currentUser.id}`);
+    const data = await res.json();
+    const msgList = document.getElementById('messageList');
+    msgList.innerHTML = '';
+    
+    if(data.messages.length === 0) {
+      msgList.innerHTML = '<div style="text-align:center; color:#94a3b8; margin-top:20px;">No messages yet. Say hello! 👋</div>';
+      return;
+    }
+    
+    data.messages.forEach(msg => {
+      const isMine = msg.senderId === currentUser.id;
+      const align = isMine ? 'align-self:flex-end; background:linear-gradient(135deg, #6366f1, #8b5cf6);' : 'align-self:flex-start; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.05);';
+      const borderRadius = isMine ? '15px 15px 0 15px' : '15px 15px 15px 0';
+      
+      const div = document.createElement('div');
+      div.style = `max-width:70%; padding:12px 18px; border-radius:${borderRadius}; color:white; font-size:15px; line-height:1.5; ${align} box-shadow:0 4px 15px rgba(0,0,0,0.1);`;
+      div.innerHTML = `
+        <div style="font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:5px; font-weight:600;">${isMine ? 'You' : msg.senderName} - ${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        ${msg.content}
+      `;
+      msgList.appendChild(div);
+    });
+    
+    msgList.scrollTop = msgList.scrollHeight;
+  }
+  
+  async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const content = input.value.trim();
+    if(!content) return;
+    
+    let receiverId = currentUser.mentorId; 
+    
+    if (currentUser.role === 'admin') {
+      alert("Advanced mentor chat view is coming in next phase. For now, mentors view chats globally.");
+      return;
+    }
+    
+    if(!receiverId) return alert('No mentor assigned.');
+    
+    input.value = '';
+    
+    const msgList = document.getElementById('messageList');
+    if(msgList.innerHTML.includes('No messages yet')) msgList.innerHTML = '';
+    const div = document.createElement('div');
+    div.style = `max-width:70%; padding:12px 18px; border-radius:15px 15px 0 15px; color:white; font-size:15px; line-height:1.5; align-self:flex-end; background:linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow:0 4px 15px rgba(0,0,0,0.1);`;
+    div.innerHTML = `<div style="font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:5px; font-weight:600;">You - Just now</div>${content}`;
+    msgList.appendChild(div);
+    msgList.scrollTop = msgList.scrollHeight;
+    
+    await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senderId: currentUser.id, receiverId, content })
+    });
+  }
+
+  async function loadProfileTab() {
+    document.getElementById('profileName').textContent = currentUser.name;
+    document.getElementById('profileRole').textContent = currentUser.role === 'admin' ? 'Mentor' : 'Student';
+    if(currentUser.profilePic) {
+      document.getElementById('profileImageDisplay').src = currentUser.profilePic;
+    } else {
+      document.getElementById('profileImageDisplay').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=6366f1&color=fff`;
+    }
+    
+    if (currentUser.role === 'admin') {
+      document.getElementById('mentorDetails').innerHTML = '<p style="color:#4ade80;">You are a mentor! Students will assign themselves to you.</p>';
+      return;
+    }
+    
+    const res = await fetch('/api/mentors');
+    const data = await res.json();
+    const mentorDiv = document.getElementById('mentorDetails');
+    
+    if (currentUser.mentorId) {
+      const myMentor = data.mentors.find(m => m.id === currentUser.mentorId);
+      if(myMentor) {
+        mentorDiv.innerHTML = `
+          <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.05); padding:15px; border-radius:10px;">
+            <img src="${myMentor.profilePic || `https://ui-avatars.com/api/?name=${myMentor.name}&background=8b5cf6&color=fff`}" style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
+            <div>
+              <strong style="color:#fff; font-size:18px;">${myMentor.name}</strong>
+              <div style="color:#4ade80; font-size:13px; margin-top:5px;">✅ Assigned to you</div>
+            </div>
+          </div>
+          <button onclick="switchTab('messages')" style="margin-top:20px; width:100%; padding:12px; background:#3b82f6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:transform 0.2s;">💬 Message Mentor</button>
+        `;
+      }
+    } else {
+      let html = `<p style="margin-bottom:15px; color:#f87171;">You do not have a mentor assigned yet. Please select one below:</p>`;
+      html += `<select id="mentorSelect" style="width:100%; padding:12px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid #4ade80; margin-bottom:15px;">`;
+      html += `<option value="">-- Choose a Mentor --</option>`;
+      data.mentors.forEach(m => {
+        html += `<option value="${m.id}">${m.name}</option>`;
+      });
+      html += `</select>`;
+      html += `<button onclick="assignMentor()" style="width:100%; padding:12px; background:#4ade80; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:transform 0.2s;">Assign Mentor</button>`;
+      mentorDiv.innerHTML = html;
+    }
+  }
+
+  function uploadProfilePic(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64 = e.target.result;
+      document.getElementById('profileImageDisplay').src = base64;
+      currentUser.profilePic = base64;
+      localStorage.setItem('abtech_currentUser', JSON.stringify(currentUser));
+      
+      await fetch('/api/users/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, mentorId: currentUser.mentorId, profilePic: base64 })
+      });
+      alert('Profile picture updated successfully!');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function assignMentor() {
+    const mentorId = document.getElementById('mentorSelect').value;
+    if(!mentorId) return alert('Please select a mentor.');
+    
+    currentUser.mentorId = parseInt(mentorId);
+    localStorage.setItem('abtech_currentUser', JSON.stringify(currentUser));
+    
+    await fetch('/api/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, mentorId: currentUser.mentorId, profilePic: currentUser.profilePic })
+    });
+    
+    loadProfileTab();
+    alert('Mentor assigned successfully!');
+  }
+  
+  if (currentUser) {
+    showApp();
+  }
+
+  async function register() {
+    const name = document.getElementById('regName').value;
+    const password = document.getElementById('regPassword').value;
+    if (!name || !password) return alert('Please fill all fields');
+    
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, password, role: 'student' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      alert('Registration successful! Please login.');
+      showLogin();
+    } catch(err) {
+      alert(err.message);
+    }
+  }
+
+  async function login() {
+    const name = document.getElementById('loginName').value;
+    const password = document.getElementById('loginPassword').value;
+    const role = document.getElementById('loginRole').value;
+    
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, password, role })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      currentUser = data.user;
+      localStorage.setItem('abtech_currentUser', JSON.stringify(currentUser));
+      showApp();
+    } catch(err) {
+      alert(err.message);
+    }
+  }
+
+  function logout() {
+    currentUser = null;
+    localStorage.removeItem('abtech_currentUser');
+    document.getElementById('authSection').style.display = 'block';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginName').value = '';
+    document.getElementById('loginPassword').value = '';
+  }
+
+  function showRegister() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+  }
+
+  function showLogin() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+  }
+
+  function showApp() {
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('userNameDisplay').innerHTML = `👤 ${currentUser.name}`;
+    document.getElementById('userRoleDisplay').innerHTML = currentUser.role === 'admin' ? '👨‍🏫 Mentor' : '🎓 Student';
+    
+    if (currentUser.role === 'admin') {
+      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('studentContent').style.display = 'none';
+      loadAdminPanel();
+    } else {
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('studentContent').style.display = 'block';
+      loadStudentContent();
+    }
+  }
+
+  let adminStudents = [];
+
+  function switchAdminTab(tabId) {
+    const tabs = ['overview', 'timetable', 'grading', 'invoice'];
+    tabs.forEach(t => {
+      document.getElementById('admin-tab-' + t).style.display = 'none';
+      document.getElementById('btn-admin-' + t).classList.remove('active');
+    });
+    document.getElementById('admin-tab-' + tabId).style.display = 'block';
+    document.getElementById('btn-admin-' + tabId).classList.add('active');
+    
+    if (tabId === 'overview') loadAdminPanel();
+    if (tabId === 'timetable') loadAdminTimetableTab();
+  }
+
+  async function loadAdminPanel() {
+    const res = await fetch('/api/admin/students');
+    const data = await res.json();
+    adminStudents = data.students;
+    
+    const adminPanel = document.getElementById('admin-tab-overview');
+    
+    // Calculate global stats
+    const totalStudents = data.students.length;
+    let totalCompletions = 0;
+    data.students.forEach(s => totalCompletions += s.completedStages.length);
+    const avgCompletions = totalStudents > 0 ? (totalCompletions / totalStudents).toFixed(1) : 0;
+    
+    adminPanel.innerHTML = `
+      <h3>👨‍🏫 Mentor Dashboard Overview</h3>
+      <div style="display:flex; gap:20px; margin-bottom:30px; margin-top:20px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px; background:rgba(99,102,241,0.1); padding:20px; border-radius:15px; border:1px solid rgba(99,102,241,0.3); text-align:center;">
+          <h2 style="color:#818cf8; font-size:36px;">${totalStudents}</h2>
+          <p style="color:#cbd5e1; font-weight:600;">Total Students</p>
+        </div>
+        <div style="flex:1; min-width:200px; background:rgba(34,197,94,0.1); padding:20px; border-radius:15px; border:1px solid rgba(34,197,94,0.3); text-align:center;">
+          <h2 style="color:#4ade80; font-size:36px;">${avgCompletions}</h2>
+          <p style="color:#cbd5e1; font-weight:600;">Avg. Stages Passed</p>
+        </div>
+        <div style="flex:1; min-width:200px; background:rgba(245,158,11,0.1); padding:20px; border-radius:15px; border:1px solid rgba(245,158,11,0.3); text-align:center;">
+          <h2 style="color:#fbbf24; font-size:36px;">${data.totalStages}</h2>
+          <p style="color:#cbd5e1; font-weight:600;">Total Curriculum Stages</p>
+        </div>
+      </div>
+      
+      <h3>📋 Student Progress Details</h3>
+      <div id="studentsList" class="students-list"></div>
+    `;
+    
+    const studentsList = document.getElementById('studentsList');
+    
+    data.students.forEach(student => {
+      const percentage = Math.round((student.completedStages.length / data.totalStages) * 100);
+      
+      const div = document.createElement('div');
+      div.className = 'student-card';
+      div.style.flexDirection = 'column';
+      div.style.alignItems = 'stretch';
+      
+      let attemptsHtml = '';
+      if(Object.keys(student.attempts).length > 0) {
+        attemptsHtml = '<div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1);"><h4 style="color:#38bdf8; margin-bottom:10px; font-size:14px;">Activity Log (Trials):</h4><div style="display:flex; gap:10px; flex-wrap:wrap;">';
+        for(let stageId in student.attempts) {
+           const attempts = student.attempts[stageId];
+           const statusColor = student.completedStages.includes(parseInt(stageId)) ? '#4ade80' : '#f87171';
+           attemptsHtml += `<span style="background:rgba(255,255,255,0.05); padding:5px 10px; border-radius:5px; font-size:12px; border-left:3px solid ${statusColor}; color:#e2e8f0;">Stage ${parseInt(stageId)+1}: ${attempts} tries</span>`;
+        }
+        attemptsHtml += '</div></div>';
+      } else {
+        attemptsHtml = '<div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1); color:#64748b; font-size:13px;">No code submitted yet.</div>';
+      }
+      
+      div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <div>
+            <strong style="font-size:18px; color:#f8fafc;">👤 ${student.name}</strong>
+            <div style="color:#94a3b8; font-size:14px; margin-top:5px;">Currently on Stage: ${student.currentStage + 1}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#4ade80; font-weight:800; font-size:20px;">${percentage}%</div>
+            <div style="color:#94a3b8; font-size:12px;">Completed (${student.completedStages.length}/${data.totalStages})</div>
+          </div>
+        </div>
+        
+        <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; margin-top:15px; overflow:hidden;">
+          <div style="width:${percentage}%; height:100%; background:linear-gradient(90deg, #38bdf8, #818cf8); border-radius:4px; transition:width 1s ease-in-out;"></div>
+        </div>
+        
+        ${attemptsHtml}
+      `;
+      studentsList.appendChild(div);
+    });
+  }
+
+  async function loadAdminTimetableTab() {
+    // Populate dropdown
+    const select = document.getElementById('ttStudent');
+    select.innerHTML = '<option value="">-- All Students --</option>';
+    adminStudents.forEach(s => {
+      select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+    });
+
+    // Fetch all schedules for admin
+    const res = await fetch(`/api/schedules/${currentUser.id}/admin`);
+    const data = await res.json();
+    
+    const list = document.getElementById('adminTimetableList');
+    list.innerHTML = '';
+    
+    if(data.schedules.length === 0) {
+      list.innerHTML = '<div style="color:#94a3b8;">No course materials scheduled yet.</div>';
+      return;
+    }
+    
+    data.schedules.forEach(s => {
+      const student = adminStudents.find(st => st.id === s.studentId);
+      const studentName = student ? student.name : 'All Students';
+      const color = s.attendance === 'present' ? '#4ade80' : '#f59e0b';
+      
+      list.innerHTML += `
+        <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:10px; border-left:4px solid #3b82f6; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="color:#38bdf8; font-size:18px;">${s.topic}</strong>
+            <div style="color:#e2e8f0; font-size:14px; margin-top:5px;">👤 Assigned to: <strong>${studentName}</strong></div>
+            <div style="color:#94a3b8; font-size:14px; margin-top:3px;">🕒 ${s.date}</div>
+            <a href="${s.link}" target="_blank" style="color:#fbbf24; text-decoration:none; display:inline-block; margin-top:8px; font-weight:600;">🔗 Open Material / Link</a>
+          </div>
+          <div style="text-align:right;">
+             <span style="color:${color}; font-weight:bold; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:5px; margin-bottom:10px; display:inline-block;">Attendance: ${s.attendance.toUpperCase()}</span><br>
+             <button onclick="deleteTimetableEntry(${s.id})" style="padding:5px 10px; background:#ef4444; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px;">🗑️ Delete</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  async function deleteTimetableEntry(id) {
+    if(!confirm("Are you sure you want to delete this course material from the timetable?")) return;
+    await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+    loadAdminTimetableTab();
+  }
+
+  async function addTimetableEntry() {
+    const studentId = document.getElementById('ttStudent').value;
+    const date = document.getElementById('ttDate').value;
+    const topic = document.getElementById('ttTopic').value;
+    const link = document.getElementById('ttLink').value;
+    
+    if(!topic || !date || !link) {
+      return alert('Please fill in Date, Topic, and Link!');
+    }
+    
+    // In this basic implementation, if studentId is empty, it assigns to a generic student ID, or we could handle broadcasting.
+    // Let's assume studentId is required for now.
+    if(!studentId) return alert('Please select a specific student to assign this material to.');
+
+    await fetch('/api/schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mentorId: currentUser.id, studentId, topic, date, link })
+    });
+    
+    alert('Course material successfully scheduled!');
+    document.getElementById('ttTopic').value = '';
+    document.getElementById('ttLink').value = '';
+    document.getElementById('ttDate').value = '';
+    loadAdminTimetableTab();
+  }
+
+  function generateInvoicePDF() {
+    const type = document.getElementById('invType').value;
+    const client = document.getElementById('invClient').value;
+    const details = document.getElementById('invDetails').value;
+    const amount = document.getElementById('invAmount').value;
+    
+    if(!client || !details || !amount) {
+      return alert('Please fill in all fields (Client, Details, Amount)');
+    }
+    
+    const date = new Date().toLocaleDateString();
+    const docId = Math.floor(Math.random() * 1000000);
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>ABTECH TUTOR - ${type}</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; position: relative; }
+          .watermark { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 100px; color: rgba(0, 0, 0, 0.04); z-index: -1; white-space: nowrap; pointer-events: none; font-weight: bold; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px; }
+          .logo-area { display: flex; align-items: center; gap: 15px; }
+          .logo { width: 60px; height: 60px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px; }
+          .company-info h1 { margin: 0; color: #1e1b4b; font-size: 24px; }
+          .company-info p { margin: 5px 0 0; color: #64748b; font-size: 14px; }
+          .doc-info { text-align: right; }
+          .doc-info h2 { margin: 0; color: #6366f1; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; }
+          .doc-info p { margin: 5px 0 0; font-size: 14px; color: #64748b; }
+          .bill-to { margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #6366f1; }
+          .bill-to h3 { margin: 0 0 10px 0; color: #1e1b4b; font-size: 16px; }
+          .bill-to p { margin: 0; font-size: 15px; color: #334155; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          th { background: #1e1b4b; color: white; padding: 15px; text-align: left; }
+          td { padding: 15px; border-bottom: 1px solid #e2e8f0; }
+          .amount-col { text-align: right; }
+          .total-row { font-weight: bold; font-size: 18px; }
+          .footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; }
+          .signature-area { text-align: center; width: 200px; }
+          .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 10px; font-weight: bold; }
+          .signature-img { font-family: 'Brush Script MT', cursive; font-size: 32px; color: #1e1b4b; margin-bottom: -10px; }
+          .terms { color: #64748b; font-size: 12px; max-width: 400px; }
+        </style>
+      </head>
+      <body>
+        <div class="watermark">ABTECH TUTOR</div>
+        
+        <div class="header">
+          <div class="logo-area">
+            <div class="logo">AT</div>
+            <div class="company-info">
+              <h1>ABTECH TUTOR</h1>
+              <p>123 Innovation Drive, Tech City<br>State, Country 12345<br>contact@abtechtutor.com | +1 (555) 123-4567</p>
+            </div>
+          </div>
+          <div class="doc-info">
+            <h2>${type}</h2>
+            <p><strong>Date:</strong> ${date}</p>
+            <p><strong>${type} #:</strong> ${type.substring(0,3).toUpperCase()}-${docId}</p>
+          </div>
+        </div>
+        
+        <div class="bill-to">
+          <h3>Billed To:</h3>
+          <p><strong>${client}</strong></p>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Description of Work / Service</th>
+              <th class="amount-col">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${details}</td>
+              <td class="amount-col">$${parseFloat(amount).toFixed(2)}</td>
+            </tr>
+            <tr class="total-row">
+              <td style="text-align: right; padding-top: 30px;">Total Due:</td>
+              <td class="amount-col" style="padding-top: 30px; color: #6366f1;">$${parseFloat(amount).toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <div class="terms">
+            <strong>Terms & Conditions:</strong><br>
+            Please make payment within 14 days of receiving this invoice. Thank you for your business!
+          </div>
+          <div class="signature-area">
+            <div class="signature-img">Abtech Admin</div>
+            <div class="signature-line">Authorized Signature</div>
+          </div>
+        </div>
+        
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          }
+        <\/script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  async function loadStudentContent() {
+    try {
+      const res = await fetch(`/api/progress/${currentUser.id}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      userProgress = data.progress;
+      allStages = data.stages;
+      currentStageDetails = data.currentStageData;
+      
+      if (userProgress.streakCount > 0) {
+        document.getElementById('streakDisplay').style.display = 'inline-block';
+        document.getElementById('streakDisplay').textContent = `🔥 ${userProgress.streakCount} Day Streak!`;
+      } else {
+        document.getElementById('streakDisplay').style.display = 'none';
+      }
+      
+      renderStageButtons();
+      renderStageContent();
+      
+      const editor = document.getElementById('codeEditor');
+      editor.addEventListener('input', function() {
+        updatePreview(editor.value);
+      });
+      
+      switchTab('sandbox');
+    } catch(err) {
+      console.error(err);
+      alert("Error in loadStudentContent: " + err.message);
+    }
+  }
+
+  function renderStageButtons() {
+    const container = document.getElementById('stageButtons');
+    container.innerHTML = '';
+    
+    let currentModule = '';
+    let moduleContainer = null;
+    
+    allStages.forEach((stage, idx) => {
+      if (stage.module !== currentModule) {
+        currentModule = stage.module;
+        
+        const modTitle = document.createElement('h4');
+        modTitle.textContent = currentModule;
+        modTitle.style.width = '100%';
+        modTitle.style.marginTop = '15px';
+        modTitle.style.marginBottom = '5px';
+        modTitle.style.color = '#764ba2';
+        modTitle.style.borderBottom = '1px solid #ddd';
+        modTitle.style.paddingBottom = '5px';
+        
+        moduleContainer = document.createElement('div');
+        moduleContainer.style.display = 'flex';
+        moduleContainer.style.gap = '10px';
+        moduleContainer.style.flexWrap = 'wrap';
+        moduleContainer.style.width = '100%';
+        moduleContainer.style.marginBottom = '10px';
+        
+        container.appendChild(modTitle);
+        container.appendChild(moduleContainer);
+      }
+      
+      const btn = document.createElement('button');
+      btn.textContent = `${stage.title}`;
+      btn.className = 'stage-btn';
+      if (userProgress.completedStages.includes(idx)) {
+        btn.classList.add('completed');
+      }
+      if (idx === userProgress.currentStage) {
+        btn.classList.add('active');
+      }
+      if (idx > userProgress.currentStage && !userProgress.completedStages.includes(idx-1) && idx !== 0) {
+        btn.classList.add('locked');
+        btn.disabled = true;
+      }
+      btn.onclick = async () => {
+        if (idx <= userProgress.currentStage || userProgress.completedStages.includes(idx-1)) {
+          const res = await fetch('/api/setstage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id, stageId: idx })
+          });
+          if(res.ok) {
+            loadStudentContent();
+          }
+        }
+      };
+      if (moduleContainer) {
+        moduleContainer.appendChild(btn);
+      } else {
+        container.appendChild(btn);
+      }
+    });
+  }
+
+  function renderStageContent() {
+    document.getElementById('questionText').innerHTML = `<strong>${currentStageDetails.title}</strong><br><br>${currentStageDetails.question}`;
+    document.getElementById('hintText').innerHTML = `💡 Hint: ${currentStageDetails.hint}`;
+    document.getElementById('attemptsText').innerHTML = `Attempts: ${currentStageDetails.attemptCount}`;
+    
+    // Check if there's a saved answer
+    const savedAnswer = userProgress.answers[userProgress.currentStage];
+    let editorValue = "";
+    
+    if (savedAnswer) {
+      editorValue = savedAnswer;
+    } else if (currentStageDetails.sampleSolution && currentStageDetails.attemptCount >= 3) {
+      editorValue = currentStageDetails.sampleSolution;
+    } else {
+      editorValue = "<!DOCTYPE html>\n<html>\n<head>\n  <title>Your Title</title>\n</head>\n<body>\n\n</body>\n</html>";
+    }
+    
+    document.getElementById('codeEditor').value = editorValue;
+    updatePreview(editorValue);
+    
+    document.getElementById('feedback').innerHTML = '';
+    document.getElementById('feedback').className = 'feedback show';
+    
+    if (currentStageDetails.attemptCount >= 3) {
+        if (!userProgress.completedStages.includes(userProgress.currentStage)) {
+            document.getElementById('feedback').innerHTML = 'ℹ️ You have tried 3 times. We provided the sample solution to help you learn! Modify it and test your code again to pass.';
+            document.getElementById('feedback').className = 'feedback show info';
+            if (!savedAnswer) {
+                document.getElementById('codeEditor').value = currentStageDetails.sampleSolution;
+                updatePreview(currentStageDetails.sampleSolution);
+            }
+        }
+    }
+  }
+
+  function updatePreview(code) {
+    const previewDiv = document.getElementById('livePreview');
+    previewDiv.innerHTML = code;
+  }
+
+  async function checkAnswer() {
+    const code = document.getElementById('codeEditor').value;
+    try {
+      const res = await fetch('/api/attempt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, code })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        userProgress.completedStages = data.completedStages;
+        document.getElementById('feedback').innerHTML = data.message;
+        document.getElementById('feedback').className = 'feedback show success';
+        renderStageButtons();
+      } else {
+        document.getElementById('feedback').innerHTML = data.message;
+        document.getElementById('feedback').className = 'feedback show error';
+        
+        // Update attempt count
+        currentStageDetails.attemptCount = data.attemptCount;
+        document.getElementById('attemptsText').innerHTML = `Attempts: ${currentStageDetails.attemptCount}`;
+        
+        if (data.solution) {
+          document.getElementById('feedback').innerHTML += '<br>ℹ️ You have tried 3 times. We have injected the sample solution into your editor to help you.';
+          document.getElementById('codeEditor').value = data.solution;
+          updatePreview(data.solution);
+          currentStageDetails.sampleSolution = data.solution;
+        }
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
+  async function nextStage() {
+    try {
+      const res = await fetch('/api/next', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error);
+        return;
+      }
+      if (data.finished) {
+        alert('🎉 Congratulations! You have completed all stages! You are an HTML master!');
+      } else {
+        loadStudentContent();
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
+  function printResult() {
+    const today = new Date().toLocaleDateString();
+    const completedCount = userProgress.completedStages.length;
+    const totalStages = allStages.length;
+    const percentage = (completedCount / totalStages) * 100;
+    
+    let stagesDetails = '';
+    allStages.forEach((stage, idx) => {
+      const status = userProgress.completedStages.includes(idx) ? '✅ COMPLETED' : (idx === userProgress.currentStage ? '🟡 IN PROGRESS' : '🔒 LOCKED');
+      stagesDetails += `<tr><td>${idx+1}</td><td>${stage.title}</td><td>${status}</td></tr>`;
+    });
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>ABTECH TUTOR - Skill Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #667eea; padding-bottom: 20px; }
+          h1 { color: #667eea; }
+          .info { margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background: #667eea; color: white; }
+          .score { font-size: 24px; font-weight: bold; color: #4caf50; text-align: center; margin: 20px; }
+          .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #999; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🏫 ABTECH TUTOR</h1>
+          <h2>HTML Skills Assessment Report</h2>
+        </div>
+        <div class="info">
+          <p><strong>Student Name:</strong> ${currentUser.name}</p>
+          <p><strong>Date:</strong> ${today}</p>
+          <p><strong>Stages Completed:</strong> ${completedCount} / ${totalStages}</p>
+          <p><strong>Overall Progress:</strong> ${percentage}%</p>
+        </div>
+        <h3>Stage-wise Performance</h3>
+        <table>
+          <tr><th>Stage</th><th>Title</th><th>Status</th></tr>
+          ${stagesDetails}
+        </table>
+        <div class="score">
+          ${percentage === 100 ? '🎉 PERFECT SCORE! HTML MASTER! 🎉' : 'Keep practicing! You\'re doing great!'}
+        </div>
+        <div class="footer">
+          <p>Generated by ABTECH TUTOR - Your HTML Learning Platform</p>
+          <p>© 2026 ABTECH TUTOR | All Rights Reserved</p>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  }
+</script>
+</body>
+</html>
