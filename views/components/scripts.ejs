@@ -216,6 +216,17 @@
       document.getElementById('profileImageDisplay').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=6366f1&color=fff`;
     }
     
+    // Attempt to load fresh data for current user to get their bio
+    try {
+      const uRes = await fetch(`/api/users/me?userId=${currentUser.id}`);
+      const uData = await uRes.json();
+      if(uData.user) {
+        if(document.getElementById('profileBio')) {
+           document.getElementById('profileBio').value = uData.user.bio || '';
+        }
+      }
+    } catch(e) {}
+    
     if (currentUser.role === 'admin') {
       document.getElementById('mentorDetails').innerHTML = '<p style="color:#4ade80;">You are a mentor! Students will assign themselves to you.</p>';
       return;
@@ -275,6 +286,21 @@
       alert('Profile picture updated successfully!');
     };
     reader.readAsDataURL(file);
+  }
+
+  async function saveStudentProfile() {
+    const bio = document.getElementById('profileBio').value;
+    const res = await fetch('/api/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, bio, mentorId: currentUser.mentorId })
+    });
+    const data = await res.json();
+    if(data.success) {
+      alert('Details saved successfully!');
+    } else {
+      alert('Failed to save details.');
+    }
   }
 
   async function assignMentor() {
@@ -422,16 +448,32 @@
 
     myStudents.forEach(s => {
       sidebar.innerHTML += `
-        <div onclick="selectMenteeChat(${s.id}, '${s.name.replace(/'/g, "\\'")}')" class="mentee-chat-btn" style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; cursor:pointer; color:#e2e8f0; transition:background 0.2s; border:1px solid rgba(255,255,255,0.1);">
-          <strong>${s.name}</strong>
+        <div onclick="selectMenteeChat(${s.id})" class="mentee-chat-btn" style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; cursor:pointer; color:#e2e8f0; transition:background 0.2s; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
+          <img src="${s.profilePic || 'https://ui-avatars.com/api/?name='+s.name+'&background=6366f1&color=fff'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #38bdf8;">
+          <div>
+            <strong>${s.name}</strong>
+            <div style="font-size:11px; color:#94a3b8;">Stage ${s.currentStage + 1}</div>
+          </div>
         </div>
       `;
     });
   }
 
-  async function selectMenteeChat(menteeId, menteeName) {
+  async function selectMenteeChat(menteeId) {
     selectedMenteeForChat = menteeId;
-    document.getElementById('adminChatHeader').innerHTML = `💬 Chatting with: <strong style="color:#6366f1;">${menteeName}</strong>`;
+    const s = adminStudents.find(st => st.id === menteeId);
+    if(s) {
+      document.getElementById('adminChatHeader').innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+          <img src="${s.profilePic || 'https://ui-avatars.com/api/?name='+s.name+'&background=6366f1&color=fff'}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid #38bdf8;">
+          <div>
+            <div style="font-size:18px;">💬 Chatting with: <strong style="color:#6366f1;">${s.name}</strong></div>
+            ${s.family_name ? `<div style="font-size:12px; color:#94a3b8; font-weight:normal;">Family: ${s.family_name} (${s.family_email})</div>` : ''}
+            ${s.bio ? `<div style="font-size:12px; color:#94a3b8; font-weight:normal; font-style:italic;">"${s.bio}"</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
     
     // Fetch messages between currentUser and menteeId
     const res = await fetch(`/api/messages/${menteeId}`);
@@ -656,10 +698,15 @@
       }
       
       div.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-          <div>
-            <strong style="font-size:18px; color:#f8fafc;">≡ƒæñ ${student.name}</strong>
-            <div style="color:#94a3b8; font-size:14px; margin-top:5px;">Currently on Stage: ${student.currentStage + 1}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:15px;">
+          <div style="display:flex; gap:15px; align-items:center;">
+            <img src="${student.profilePic || 'https://ui-avatars.com/api/?name='+student.name+'&background=6366f1&color=fff'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #38bdf8;">
+            <div>
+              <strong style="font-size:18px; color:#f8fafc;">${student.name}</strong>
+              <div style="color:#94a3b8; font-size:14px; margin-top:2px;">Currently on Stage: ${student.currentStage + 1}</div>
+              ${student.family_name ? `<div style="color:#cbd5e1; font-size:12px; margin-top:2px;">👨‍👩‍👧 Family: ${student.family_name} (${student.family_email})</div>` : ''}
+              ${student.bio ? `<div style="color:#94a3b8; font-size:12px; margin-top:2px;"><em>"${student.bio}"</em></div>` : ''}
+            </div>
           </div>
           <div style="text-align:right;">
             <div style="color:#4ade80; font-weight:800; font-size:20px;">${percentage}%</div>
