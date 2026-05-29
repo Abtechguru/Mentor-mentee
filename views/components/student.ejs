@@ -6,6 +6,7 @@
       <button class="stage-btn" onclick="switchTab('aichat')" id="btn-aichat">🤖 AI Mentor</button>
       <button class="stage-btn" onclick="switchTab('schedule')" id="btn-schedule">📅 Schedule & Attendance</button>
       <button class="stage-btn" onclick="switchTab('assignments')" id="btn-assignments">📝 Assignments</button>
+      <button class="stage-btn" onclick="switchTab('analytics')" id="btn-analytics">🏅 Analytics & Badges</button>
       <button class="stage-btn" onclick="switchTab('ide')" id="btn-ide" style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; box-shadow:0 2px 10px rgba(16,185,129,0.3);">🖥️ Pro IDE</button>
     </div>
 
@@ -143,6 +144,40 @@
          <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">📝 Assignments</h3>
          <div id="assignmentList" style="display:flex; flex-direction:column; gap:20px;">
             <!-- Assignments go here -->
+         </div>
+       </div>
+    </div>
+    
+    <div id="tab-analytics" style="display:none;" class="glass-panel fade-in">
+       <div style="padding:30px;">
+         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+           <h3 style="color:#fff; font-size:24px;">📈 Analytics & Certificates</h3>
+           <button onclick="printResult()" style="padding:10px 20px; background:#8b5cf6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">🖨️ Print Skill Report</button>
+         </div>
+         
+         <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px;">
+           <div style="flex:1; min-width:250px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); border-left:4px solid #10b981;">
+             <h4 style="color:#10b981; margin-bottom:10px;">Coding Proficiency</h4>
+             <p style="color:#cbd5e1; font-size:14px; margin-bottom:15px;">Based on your Sandbox & IDE performance.</p>
+             <div id="analyticsProficiency" style="color:#fff; font-size:28px; font-weight:bold;">0%</div>
+           </div>
+           
+           <div style="flex:1; min-width:250px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); border-left:4px solid #f59e0b;">
+             <h4 style="color:#f59e0b; margin-bottom:10px;">Learning Speed</h4>
+             <p style="color:#cbd5e1; font-size:14px; margin-bottom:15px;">Average attempts per challenge.</p>
+             <div id="analyticsSpeed" style="color:#fff; font-size:28px; font-weight:bold;">-</div>
+           </div>
+           
+           <div style="flex:1; min-width:250px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); border-left:4px solid #3b82f6;">
+             <h4 style="color:#3b82f6; margin-bottom:10px;">Performance Insights</h4>
+             <p style="color:#cbd5e1; font-size:14px; margin-bottom:15px;">Suggested improvement paths.</p>
+             <div id="analyticsInsights" style="color:#e2e8f0; font-size:14px; line-height:1.5;">Keep coding to generate insights!</div>
+           </div>
+         </div>
+         
+         <h4 style="color:#fff; margin-bottom:15px;">🏅 Badges & Achievements</h4>
+         <div id="badgesList" style="display:flex; gap:15px; flex-wrap:wrap;">
+           <!-- Badges will be generated dynamically -->
          </div>
        </div>
     </div>

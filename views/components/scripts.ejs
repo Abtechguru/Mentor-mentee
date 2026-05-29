@@ -884,6 +884,29 @@
     const assignData = await assignRes.json();
     const allSubmissions = assignData.submissions || [];
     
+    // Mentor Analytics
+    let totalGrades = 0;
+    let gradedCount = 0;
+    allSubmissions.forEach(sub => {
+        if (sub.grade !== null) {
+           totalGrades += sub.grade;
+           gradedCount++;
+        }
+    });
+    const avgGrade = gradedCount > 0 ? Math.round(totalGrades / gradedCount) : 0;
+    if(document.getElementById('mentorAvgGrade')) document.getElementById('mentorAvgGrade').innerText = avgGrade + '%';
+    
+    let growingStudents = 0;
+    data.students.forEach(s => {
+        if(s.completedStages && s.completedStages.length > 0) growingStudents++;
+    });
+    if(document.getElementById('mentorGrowth')) document.getElementById('mentorGrowth').innerText = growingStudents;
+    
+    let engagementScore = "Good";
+    if (gradedCount >= 5) engagementScore = "Excellent 🌟";
+    else if (gradedCount === 0 && data.students.length > 0) engagementScore = "Needs Improvement";
+    if(document.getElementById('mentorEngagement')) document.getElementById('mentorEngagement').innerText = engagementScore;
+    
     const adminPanel = document.getElementById('admin-tab-overview');
     
     // Calculate global stats
@@ -1206,6 +1229,38 @@
           updatePreview(aceEditorSandbox.getValue());
         });
       }
+      // Calculate Analytics & Badges
+      const proficiency = Math.round((userProgress.completedStages.length / allStages.length) * 100);
+      document.getElementById('analyticsProficiency').innerText = proficiency + '%';
+      
+      let totalAttempts = 0;
+      for (const stageId in userProgress.attempts) {
+          totalAttempts += userProgress.attempts[stageId];
+      }
+      
+      const speed = userProgress.completedStages.length > 0 ? (totalAttempts / userProgress.completedStages.length).toFixed(1) : 0;
+      document.getElementById('analyticsSpeed').innerText = speed > 0 ? speed + ' tries/stage' : '-';
+      
+      let insight = 'Keep coding to generate insights!';
+      if (speed > 3) {
+          insight = '💡 You tend to use trial-and-error. Take more time to read the hints and review the lesson before submitting!';
+      } else if (speed > 0 && speed <= 3) {
+          insight = '🚀 Excellent learning speed! You are grasping the concepts efficiently.';
+      }
+      document.getElementById('analyticsInsights').innerText = insight;
+      
+      const badgesList = document.getElementById('badgesList');
+      badgesList.innerHTML = '';
+      if (userProgress.completedStages.length >= 1) {
+          badgesList.innerHTML += '<div style="background:linear-gradient(135deg, #10b981, #059669); padding:10px 15px; border-radius:10px; color:white; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(16,185,129,0.3);">👶 First Steps</div>';
+      }
+      if (userProgress.completedStages.length >= 3) {
+          badgesList.innerHTML += '<div style="background:linear-gradient(135deg, #3b82f6, #2563eb); padding:10px 15px; border-radius:10px; color:white; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(59,130,246,0.3);">🚀 Rapid Learner</div>';
+      }
+      if (userProgress.completedStages.length === allStages.length && allStages.length > 0) {
+          badgesList.innerHTML += '<div style="background:linear-gradient(135deg, #f59e0b, #d97706); padding:10px 15px; border-radius:10px; color:white; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(245,158,11,0.3);">🏆 HTML Master</div>';
+      }
+      if (badgesList.innerHTML === '') badgesList.innerHTML = '<span style="color:#64748b;">Complete stages to earn badges!</span>';
       
       switchTab('sandbox');
     } catch(err) {
