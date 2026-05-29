@@ -2,6 +2,8 @@
   let currentUser = JSON.parse(localStorage.getItem('abtech_currentUser'));
   let currentStageDetails = null; // Store fetched data
   let allStages = [];
+  let aceEditor = null;
+  let aceEditorSandbox = null;
   let userProgress = null;
   
   function switchTab(tabId) {
@@ -463,6 +465,23 @@
       sel.innerHTML = '<option value="">Select Assignment...</option>';
       (data.assignments || []).forEach(a => sel.innerHTML += `<option value="${a.id}">${a.title}</option>`);
     }
+
+    if (!aceEditor) {
+      aceEditor = ace.edit("proCodeEditor");
+      aceEditor.setTheme("ace/theme/tomorrow_night_eighties");
+      aceEditor.session.setMode("ace/mode/html");
+      aceEditor.setOptions({
+        enableBasicAutocompletion: true,
+        enableLiveAutocompletion: true,
+        showPrintMargin: false,
+        fontSize: "16px"
+      });
+      
+      document.getElementById('ideLanguage').addEventListener('change', (e) => {
+        const mode = e.target.value;
+        aceEditor.session.setMode("ace/mode/" + mode);
+      });
+    }
   }
 
   function loadClassroomIframe() {
@@ -485,7 +504,7 @@
   }
 
   function exportIdeCode() {
-    const code = document.getElementById('proCodeEditor').value;
+    const code = aceEditor.getValue();
     const lang = document.getElementById('ideLanguage').value;
     let ext = 'txt';
     if(lang === 'html') ext = 'html';
@@ -504,7 +523,7 @@
 
   async function submitIdeAssignment() {
     const assignmentId = document.getElementById('ideAssignmentSelect').value;
-    const code = document.getElementById('proCodeEditor').value;
+    const code = aceEditor.getValue();
     if(!assignmentId) return alert("Please select an assignment first.");
     if(!code) return alert("Code editor is empty.");
 
@@ -521,7 +540,7 @@
 
   async function sendCodeToMentee() {
     const studentId = document.getElementById('ideMenteeSelect').value;
-    const code = document.getElementById('proCodeEditor').value;
+    const code = aceEditor.getValue();
     if(!studentId) return alert("Please select a student.");
     if(!code) return alert("Code editor is empty.");
 
@@ -1147,10 +1166,21 @@
       renderStageButtons();
       renderStageContent();
       
-      const editor = document.getElementById('codeEditor');
-      editor.addEventListener('input', function() {
-        updatePreview(editor.value);
-      });
+      if (!aceEditorSandbox) {
+        aceEditorSandbox = ace.edit("codeEditor");
+        aceEditorSandbox.setTheme("ace/theme/tomorrow_night_eighties");
+        aceEditorSandbox.session.setMode("ace/mode/html");
+        aceEditorSandbox.setOptions({
+          enableBasicAutocompletion: true,
+          enableLiveAutocompletion: true,
+          showPrintMargin: false,
+          fontSize: "16px"
+        });
+        
+        aceEditorSandbox.session.on('change', function() {
+          updatePreview(aceEditorSandbox.getValue());
+        });
+      }
       
       switchTab('sandbox');
     } catch(err) {
@@ -1240,7 +1270,11 @@
       editorValue = "<!DOCTYPE html>\n<html>\n<head>\n  <title>Your Title</title>\n</head>\n<body>\n\n</body>\n</html>";
     }
     
-    document.getElementById('codeEditor').value = editorValue;
+    if (aceEditorSandbox) {
+        aceEditorSandbox.setValue(editorValue, -1);
+    } else {
+        document.getElementById('codeEditor').value = editorValue;
+    }
     updatePreview(editorValue);
     
     document.getElementById('feedback').innerHTML = '';
@@ -1251,7 +1285,7 @@
             document.getElementById('feedback').innerHTML = 'Γä╣∩╕Å You have tried 3 times. We provided the sample solution to help you learn! Modify it and test your code again to pass.';
             document.getElementById('feedback').className = 'feedback show info';
             if (!savedAnswer) {
-                document.getElementById('codeEditor').value = currentStageDetails.sampleSolution;
+                if (aceEditorSandbox) aceEditorSandbox.setValue(currentStageDetails.sampleSolution, -1);
                 updatePreview(currentStageDetails.sampleSolution);
             }
         }
@@ -1264,7 +1298,7 @@
   }
 
   async function checkAnswer() {
-    const code = document.getElementById('codeEditor').value;
+    const code = aceEditorSandbox ? aceEditorSandbox.getValue() : document.getElementById('codeEditor').value;
     try {
       const res = await fetch('/api/attempt', {
         method: 'POST',
@@ -1287,8 +1321,8 @@
         document.getElementById('attemptsText').innerHTML = `Attempts: ${currentStageDetails.attemptCount}`;
         
         if (data.solution) {
-          document.getElementById('feedback').innerHTML += '<br>Γä╣∩╕Å You have tried 3 times. We have injected the sample solution into your editor to help you.';
-          document.getElementById('codeEditor').value = data.solution;
+          document.getElementById('feedback').innerHTML += '<br>✅ You have tried 3 times. We have injected the sample solution into your editor to help you.';
+          if (aceEditorSandbox) aceEditorSandbox.setValue(data.solution, -1);
           updatePreview(data.solution);
           currentStageDetails.sampleSolution = data.solution;
         }
