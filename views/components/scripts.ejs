@@ -1704,14 +1704,15 @@
          // Mentor Notifications
          const res = await fetch(`/api/schedules/${currentUser.id}/admin`);
          const data = await res.json();
-         
          const pendingSchedules = (data.schedules || []).filter(s => s.attendance === 'requested');
          pendingSchedules.forEach(s => {
             notifCount++;
             list.innerHTML += `<div style="padding:10px; background:rgba(245,158,11,0.2); border-radius:8px; border-left:3px solid #f59e0b;">📅 Mentee ${s.studentName || 'Student'} requested a session for ${new Date(s.date).toLocaleDateString()}</div>`;
          });
          
-         const pendingGrades = (data.submissions || []).filter(s => s.grade === null);
+         const assignRes = await fetch(`/api/assignments/${currentUser.id}/admin`);
+         const assignData = await assignRes.json();
+         const pendingGrades = (assignData.submissions || []).filter(s => s.grade === null);
          if(pendingGrades.length > 0) {
             notifCount++;
             list.innerHTML += `<div style="padding:10px; background:rgba(139,92,246,0.2); border-radius:8px; border-left:3px solid #8b5cf6;">📝 You have ${pendingGrades.length} ungraded assignments!</div>`;
@@ -1720,14 +1721,15 @@
          // Student Notifications
          const res = await fetch(`/api/schedules/${currentUser.id}/student`);
          const data = await res.json();
-         
          const upcomingClasses = (data.schedules || []).filter(s => s.attendance !== 'requested' && new Date(s.date) > new Date());
          if(upcomingClasses.length > 0) {
             notifCount++;
             list.innerHTML += `<div style="padding:10px; background:rgba(16,185,129,0.2); border-radius:8px; border-left:3px solid #10b981;">🎥 You have ${upcomingClasses.length} upcoming live classes!</div>`;
          }
          
-         const newGrades = (data.submissions || []).filter(s => s.grade !== null);
+         const assignRes = await fetch(`/api/assignments/${currentUser.id}/student`);
+         const assignData = await assignRes.json();
+         const newGrades = (assignData.submissions || []).filter(s => s.grade !== null);
          if(newGrades.length > 0) {
             notifCount++;
             list.innerHTML += `<div style="padding:10px; background:rgba(56,189,248,0.2); border-radius:8px; border-left:3px solid #38bdf8;">🏆 You have received grades for ${newGrades.length} assignments.</div>`;
