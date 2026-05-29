@@ -1107,5 +1107,54 @@
       addChatMessage('adminAiMessageList', 'model', 'Connection error.');
     }
   }
+  async function generateAILectureNotes() {
+    const topicInput = document.getElementById('aiNoteTopic');
+    const topic = topicInput.value.trim();
+    if(!topic) return alert('Please enter a topic first.');
+
+    const btn = document.getElementById('btnGenerateNotes');
+    btn.innerHTML = '⏳ Generating...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/generate-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic })
+      });
+      const data = await res.json();
+      if(data.success) {
+        document.getElementById('aiNoteResult').style.display = 'block';
+        
+        // Simple markdown parsing for display
+        let htmlContent = data.notes;
+        htmlContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        htmlContent = htmlContent.replace(/```([\s\S]*?)```/g, '<pre style="background:#1e1e1e; padding:10px; border-radius:5px; margin:10px 0; overflow-x:auto;"><code>$1</code></pre>');
+        htmlContent = htmlContent.replace(/\n/g, '<br>');
+        
+        document.getElementById('aiNoteContent').innerHTML = htmlContent;
+        // Store raw markdown for copying
+        document.getElementById('aiNoteContent').dataset.raw = data.notes;
+      } else {
+        alert('Failed to generate notes.');
+      }
+    } catch(e) {
+      alert('Error connecting to AI.');
+    }
+
+    btn.innerHTML = '✨ Generate Notes';
+    btn.disabled = false;
+  }
+
+  function copyAiNotes() {
+    const rawText = document.getElementById('aiNoteContent').dataset.raw;
+    if(rawText) {
+      navigator.clipboard.writeText(rawText).then(() => {
+        alert('Notes copied to clipboard!');
+      }).catch(() => {
+        alert('Failed to copy. Please select and copy manually.');
+      });
+    }
+  }
 </script>
 </body>

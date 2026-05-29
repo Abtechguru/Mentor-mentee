@@ -389,5 +389,39 @@ Current active user role is: ${userRole === 'admin' ? 'Admin/Mentor (You should 
   }
 });
 
+// AI Lecture Notes Generator
+app.post('/api/generate-notes', async (req, res) => {
+  try {
+    const { topic } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set in .env' });
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const systemInstruction = `You are an expert curriculum developer. 
+Create structured, engaging lecture notes for the topic provided by the user.
+Format the output in clear Markdown with the following sections:
+1. **Title**: The topic name
+2. **Learning Objectives**: 3 bullet points
+3. **Core Concepts**: Clear explanations of the main ideas
+4. **Code/Real-World Examples**: Provide concrete examples
+5. **Common Mistakes**: Pitfalls to avoid
+6. **Key Takeaways**: A quick summary
+
+Keep it concise, professional, and ready to be used by a mentor to teach a student.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: `Topic: ${topic}` }] }],
+      config: { systemInstruction, temperature: 0.7 }
+    });
+
+    res.json({ success: true, notes: response.text });
+  } catch (error) {
+    console.error('AI Notes Error:', error);
+    res.status(500).json({ error: 'Failed to generate notes' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
