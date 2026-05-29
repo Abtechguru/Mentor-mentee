@@ -301,13 +301,16 @@
   async function register() {
     const name = document.getElementById('regName').value;
     const password = document.getElementById('regPassword').value;
+    const family_name = document.getElementById('regFamilyName').value;
+    const family_email = document.getElementById('regFamilyEmail').value;
+
     if (!name || !password) return alert('Please fill all fields');
     
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, password, role: 'student' })
+        body: JSON.stringify({ name, password, role: 'student', family_name, family_email })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -395,6 +398,97 @@
     if (tabId === 'timetable') loadAdminTimetableTab();
     if (tabId === 'builder') loadAdminBuilderTab();
     if (tabId === 'profile') loadAdminProfileTab();
+    if (tabId === 'messages') loadAdminMessagesTab();
+  }
+
+  let selectedMenteeForChat = null;
+
+  async function loadAdminMessagesTab() {
+    // Make sure we have the latest students
+    const res = await fetch('/api/admin/students');
+    const data = await res.json();
+    adminStudents = data.students || [];
+
+    const sidebar = document.getElementById('adminChatSidebar');
+    sidebar.innerHTML = '';
+    
+    // Only show students who assigned THIS mentor
+    const myStudents = adminStudents.filter(s => s.mentorId === currentUser.id);
+    
+    if (myStudents.length === 0) {
+      sidebar.innerHTML = '<p style="color:#94a3b8; font-size:14px;">No mentees assigned to you yet.</p>';
+      return;
+    }
+
+    myStudents.forEach(s => {
+      sidebar.innerHTML += `
+        <div onclick="selectMenteeChat(${s.id}, '${s.name.replace(/'/g, "\\'")}')" class="mentee-chat-btn" style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; cursor:pointer; color:#e2e8f0; transition:background 0.2s; border:1px solid rgba(255,255,255,0.1);">
+          <strong>${s.name}</strong>
+        </div>
+      `;
+    });
+  }
+
+  async function selectMenteeChat(menteeId, menteeName) {
+    selectedMenteeForChat = menteeId;
+    document.getElementById('adminChatHeader').innerHTML = `💬 Chatting with: <strong style="color:#6366f1;">${menteeName}</strong>`;
+    
+    // Fetch messages between currentUser and menteeId
+    const res = await fetch(`/api/messages/${menteeId}`);
+    const data = await res.json();
+    const msgList = document.getElementById('adminRealMessageList');
+    msgList.innerHTML = '';
+
+    const relevantMsgs = data.messages.filter(m => 
+      (m.senderId === currentUser.id && m.receiverId === menteeId) ||
+      (m.senderId === menteeId && m.receiverId === currentUser.id)
+    );
+
+    if(relevantMsgs.length === 0) {
+      msgList.innerHTML = '<div style="text-align:center; color:#94a3b8; margin-top:20px;">No messages yet. Send a greeting! 👋</div>';
+      return;
+    }
+
+    relevantMsgs.forEach(msg => {
+      const isMine = msg.senderId === currentUser.id;
+      const align = isMine ? 'align-self:flex-end; background:linear-gradient(135deg, #6366f1, #8b5cf6);' : 'align-self:flex-start; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.05);';
+      const borderRadius = isMine ? '15px 15px 0 15px' : '15px 15px 15px 0';
+      const senderName = isMine ? 'You' : msg.senderName;
+
+      const div = document.createElement('div');
+      div.style = `max-width:70%; padding:12px 18px; border-radius:${borderRadius}; color:white; font-size:15px; line-height:1.5; ${align} box-shadow:0 4px 15px rgba(0,0,0,0.1);`;
+      div.innerHTML = `
+        <div style="font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:5px; font-weight:600;">${senderName} - ${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        ${msg.content}
+      `;
+      msgList.appendChild(div);
+    });
+    msgList.scrollTop = msgList.scrollHeight;
+  }
+
+  async function sendAdminMessage() {
+    if (!selectedMenteeForChat) return alert('Please select a student from the sidebar first.');
+    const input = document.getElementById('adminMessageInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    input.value = '';
+
+    // Optimistic UI update
+    const msgList = document.getElementById('adminRealMessageList');
+    if(msgList.innerHTML.includes('No messages yet')) msgList.innerHTML = '';
+    const div = document.createElement('div');
+    div.style = `max-width:70%; padding:12px 18px; border-radius:15px 15px 0 15px; color:white; font-size:15px; line-height:1.5; align-self:flex-end; background:linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow:0 4px 15px rgba(0,0,0,0.1);`;
+    div.innerHTML = `<div style="font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:5px; font-weight:600;">You - Just now</div>${content}`;
+    msgList.appendChild(div);
+    msgList.scrollTop = msgList.scrollHeight;
+
+    // Send to server
+    await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senderId: currentUser.id, receiverId: selectedMenteeForChat, content })
+    });
   }
 
   async function loadAdminProfileTab() {
@@ -528,7 +622,13 @@
         </div>
       </div>
       
-      <h3>≡ƒôï Student Progress Details</h3>
+      <div style="margin-bottom:30px; display:flex; justify-content:space-between; align-items:center;">
+        <h3>📋 Student Progress Details</h3>
+        <button onclick="generateWeeklySummaries()" id="btnGenSummaries" style="padding:10px 20px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(59,130,246,0.3); transition:transform 0.2s;">
+          📧 Generate Weekly Family Summaries
+        </button>
+      </div>
+      <div id="summaryResults" style="display:none; margin-bottom:20px; background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); max-height:300px; overflow-y:auto; color:#e2e8f0; font-size:14px; white-space:pre-wrap;"></div>
       <div id="studentsList" class="students-list"></div>
     `;
     
@@ -1155,6 +1255,34 @@
         alert('Failed to copy. Please select and copy manually.');
       });
     }
+  }
+  async function generateWeeklySummaries() {
+    const btn = document.getElementById('btnGenSummaries');
+    const resultDiv = document.getElementById('summaryResults');
+    
+    btn.innerHTML = '⏳ Generating...';
+    btn.disabled = true;
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'Analyzing student data and sending emails to families...';
+
+    try {
+      const res = await fetch('/api/admin/generate-summaries', { method: 'POST' });
+      const data = await res.json();
+      
+      if(data.success) {
+        resultDiv.innerHTML = `<span style="color:#4ade80; font-weight:bold;">✅ Success! Summaries generated and "sent" to families.</span>\n\n`;
+        data.logs.forEach(log => {
+          resultDiv.innerHTML += `<strong>To: ${log.family_email} (${log.family_name})</strong> regarding ${log.studentName}:\n${log.summary}\n\n---\n\n`;
+        });
+      } else {
+        resultDiv.innerHTML = `<span style="color:#f87171;">Failed to generate summaries: ${data.error}</span>`;
+      }
+    } catch(e) {
+      resultDiv.innerHTML = `<span style="color:#f87171;">Connection error.</span>`;
+    }
+
+    btn.innerHTML = '📧 Generate Weekly Family Summaries';
+    btn.disabled = false;
   }
 </script>
 </body>

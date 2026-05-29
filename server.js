@@ -45,10 +45,14 @@ const stages = [
 ];
 
 app.post('/api/register', async (req, res) => {
-  const { name, password, role } = req.body;
+  const { name, password, role, family_name, family_email } = req.body;
   if (!name || !password) return res.status(400).json({ error: 'Missing fields' });
   
-  const { data: user, error } = await supabase.from('users').insert([{ name, password, role: role || 'student' }]).select().single();
+  const insertData = { name, password, role: role || 'student' };
+  if (family_name) insertData.family_name = family_name;
+  if (family_email) insertData.family_email = family_email;
+
+  const { data: user, error } = await supabase.from('users').insert([insertData]).select().single();
   if (error) return res.status(400).json({ error: 'User already exists' });
   
   if (user.role === 'student') {
@@ -420,6 +424,53 @@ Keep it concise, professional, and ready to be used by a mentor to teach a stude
   } catch (error) {
     console.error('AI Notes Error:', error);
     res.status(500).json({ error: 'Failed to generate notes' });
+  }
+});
+
+// AI Weekly Family Summary Generator
+app.post('/api/admin/generate-summaries', async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set' });
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    // Fetch all students and their progress
+    const { data: students } = await supabase.from('users').select('id, name, mentorId, family_name, family_email').eq('role', 'student');
+    const { data: progress } = await supabase.from('progress').select('*');
+    
+    const logs = [];
+
+    for (const student of students) {
+      if (!student.family_email) continue;
+
+      const studentProgress = progress.find(p => p.userId === student.id);
+      const completedStagesCount = studentProgress ? (JSON.parse(studentProgress.completedStages || '[]')).length : 0;
+      
+      const prompt = `You are the lead mentor for a coding platform. Write a short, encouraging weekly progress email (2-3 sentences) to the family of a student.
+Student Name: ${student.name}
+Family Name: ${student.family_name || 'Family'}
+Stages Completed: ${completedStagesCount}
+Tone: Professional, warm, and encouraging.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: { temperature: 0.7 }
+      });
+
+      logs.push({
+        studentName: student.name,
+        family_name: student.family_name,
+        family_email: student.family_email,
+        summary: response.text
+      });
+    }
+
+    res.json({ success: true, logs });
+  } catch (error) {
+    console.error('Summary Error:', error);
+    res.status(500).json({ error: 'Failed to generate summaries' });
   }
 });
 
