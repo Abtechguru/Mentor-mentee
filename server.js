@@ -78,9 +78,55 @@ app.post('/api/login', async (req, res) => {
   res.json({ success: true, user });
 });
 
+app.get('/api/seed', async (req, res) => {
+  // Seed default course
+  const { data: course } = await supabase.from('courses').insert([{ title: 'HTML Mastery', description: 'Learn the foundations of HTML' }]).select().single();
+  if(!course) return res.json({ error: 'Course exists or error' });
+
+  for(let stage of stages) {
+    await supabase.from('stages').insert([{
+      courseId: course.id,
+      module: stage.module,
+      title: stage.title,
+      question: stage.question,
+      hint: stage.hint,
+      requiredElements: JSON.stringify(stage.requiredElements),
+      sampleSolution: stage.sampleSolution,
+      orderIndex: stage.id
+    }]);
+  }
+  res.json({ success: true, message: 'Database seeded with courses and stages!' });
+});
+
+// Admin fetching courses and stages
+app.get('/api/courses', async (req, res) => {
+  const { data: courses } = await supabase.from('courses').select('*, stages(*)');
+  res.json({ courses });
+});
+
+// Admin adding a course
+app.post('/api/courses', async (req, res) => {
+  const { title, description } = req.body;
+  const { data, error } = await supabase.from('courses').insert([{ title, description }]).select();
+  res.json({ success: !error, data, error });
+});
+
+// Admin adding a stage
+app.post('/api/stages', async (req, res) => {
+  const { courseId, module, title, question, hint, requiredElements, sampleSolution, orderIndex } = req.body;
+  const { data, error } = await supabase.from('stages').insert([{
+    courseId, module, title, question, hint,
+    requiredElements: JSON.stringify(requiredElements),
+    sampleSolution, orderIndex
+  }]).select();
+  res.json({ success: !error, data, error });
+});
+
 app.get('/api/admin/students', async (req, res) => {
   const { data: users, error } = await supabase.from('users').select('*, progress(*)').eq('role', 'student');
   if (error) return res.status(500).json({ error: 'Database error' });
+  
+  const { data: dbStages } = await supabase.from('stages').select('*').order('orderIndex', { ascending: true });
   
   const students = users.map(u => {
     const p = (u.progress && u.progress[0]) || {};
@@ -93,24 +139,30 @@ app.get('/api/admin/students', async (req, res) => {
     };
   });
   
-  res.json({ students, totalStages: stages.length, stages: stages.map(s => ({ id: s.id, title: s.title, module: s.module })) });
+  res.json({ students, totalStages: dbStages ? dbStages.length : 0, stages: dbStages || [] });
 });
 
 app.get('/api/progress/:userId', async (req, res) => {
   const { data: row, error } = await supabase.from('progress').select('*').eq('userId', req.params.userId).single();
   if (error || !row) return res.status(404).json({ error: 'Progress not found' });
   
+  const { data: dbStages } = await supabase.from('stages').select('*').order('orderIndex', { ascending: true });
+  if (!dbStages || dbStages.length === 0) return res.json({ error: 'No stages found in database. Run /api/seed' });
+
   const completedStages = JSON.parse(row.completedStages || '[]');
   const answers = JSON.parse(row.answers || '{}');
   const attempts = JSON.parse(row.attempts || '{}');
   const currentStageIdx = row.currentStage || 0;
   
+  const currentStageData = dbStages[currentStageIdx];
+  if(!currentStageData) return res.status(404).json({ error: 'Stage data missing' });
+
   res.json({
     progress: { currentStage: currentStageIdx, completedStages, answers, attempts, streakCount: row.streakCount || 0 },
-    stages: stages.map(s => ({ id: s.id, title: s.title, module: s.module })),
+    stages: dbStages,
     currentStageData: {
-      ...stages[currentStageIdx],
-      sampleSolution: (attempts[currentStageIdx] || 0) >= 3 ? stages[currentStageIdx].sampleSolution : null,
+      ...currentStageData,
+      sampleSolution: (attempts[currentStageIdx] || 0) >= 3 ? currentStageData.sampleSolution : null,
       attemptCount: attempts[currentStageIdx] || 0
     }
   });
@@ -121,8 +173,10 @@ app.post('/api/attempt', async (req, res) => {
   const { data: row, error } = await supabase.from('progress').select('*').eq('userId', userId).single();
   if (error || !row) return res.status(404).json({ error: 'Progress not found' });
   
+  const { data: dbStages } = await supabase.from('stages').select('*').order('orderIndex', { ascending: true });
   const currentStageIdx = row.currentStage || 0;
-  const stage = stages[currentStageIdx];
+  const stage = dbStages[currentStageIdx];
+  
   const attempts = JSON.parse(row.attempts || '{}');
   const answers = JSON.parse(row.answers || '{}');
   const completedStages = JSON.parse(row.completedStages || '[]');
@@ -131,7 +185,10 @@ app.post('/api/attempt', async (req, res) => {
   attempts[currentStageIdx] = attemptCount;
   answers[currentStageIdx] = code;
   
-  let missing = stage.requiredElements.filter(req => !code.toLowerCase().includes(req.toLowerCase()));
+  let reqElements = [];
+  try { reqElements = JSON.parse(stage.requiredElements); } catch(e) { reqElements = stage.requiredElements.split(','); }
+  
+  let missing = reqElements.filter(req => !code.toLowerCase().includes(req.toLowerCase()));
   
   if (missing.length === 0) {
     if (!completedStages.includes(currentStageIdx)) completedStages.push(currentStageIdx);
@@ -148,10 +205,12 @@ app.post('/api/next', async (req, res) => {
   const { data: row } = await supabase.from('progress').select('*').eq('userId', userId).single();
   if (!row) return res.status(404).json({ error: 'Not found' });
   
+  const { data: dbStages } = await supabase.from('stages').select('*');
+  
   const completedStages = JSON.parse(row.completedStages || '[]');
   if (!completedStages.includes(row.currentStage)) return res.status(400).json({ error: 'Complete current stage first!' });
   
-  if (row.currentStage < stages.length - 1) {
+  if (row.currentStage < dbStages.length - 1) {
     await supabase.from('progress').update({ currentStage: row.currentStage + 1 }).eq('userId', userId);
     res.json({ success: true, currentStage: row.currentStage + 1 });
   } else {

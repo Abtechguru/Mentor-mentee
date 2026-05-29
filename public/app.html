@@ -147,6 +147,7 @@
       <button class="stage-btn" onclick="switchAdminTab('timetable')" id="btn-admin-timetable">📅 Timetable & Course Materials</button>
       <button class="stage-btn" onclick="switchAdminTab('grading')" id="btn-admin-grading">📝 Assignments & Grading</button>
       <button class="stage-btn" onclick="switchAdminTab('invoice')" id="btn-admin-invoice">🧾 Invoice & Receipts</button>
+      <button class="stage-btn" onclick="switchAdminTab('builder')" id="btn-admin-builder">🏗️ Course Builder</button>
     </div>
 
     <div id="admin-tab-overview" class="admin-panel glass-panel fade-in">
@@ -224,6 +225,49 @@
          <button onclick="generateInvoicePDF()" style="margin-top:20px; padding:12px 25px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(245, 158, 11, 0.3); transition:transform 0.2s;">🖨️ Generate & Download PDF</button>
        </div>
     </div>
+
+    <div id="admin-tab-builder" class="glass-panel fade-in" style="display:none; padding:30px;">
+       <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">🏗️ Curriculum Course Builder</h3>
+       
+       <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); margin-bottom:30px;">
+         <h4 style="color:#38bdf8; margin-bottom:15px;">Create a New Stage/Lesson</h4>
+         <div style="display:flex; gap:15px; flex-wrap:wrap;">
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Select Course</label>
+             <select id="builderCourse" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);"></select>
+           </div>
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Module Name</label>
+             <input type="text" id="builderModule" placeholder="e.g. 1. HTML Basics" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:15px;">
+           <div style="flex:1; min-width:200px;">
+             <label style="color:#cbd5e1; font-size:14px;">Stage Title</label>
+             <input type="text" id="builderTitle" placeholder="e.g. 1.1 The Body Tag" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+           </div>
+         </div>
+         <div style="margin-top:15px;">
+           <label style="color:#cbd5e1; font-size:14px;">Question / Instruction</label>
+           <textarea id="builderQuestion" placeholder="Explain what the student needs to do..." style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2); min-height:80px;"></textarea>
+         </div>
+         <div style="margin-top:15px;">
+           <label style="color:#cbd5e1; font-size:14px;">Hint</label>
+           <input type="text" id="builderHint" placeholder="e.g. Use the <body> tag." style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+         </div>
+         <div style="margin-top:15px;">
+           <label style="color:#cbd5e1; font-size:14px;">Required Elements (Comma separated)</label>
+           <input type="text" id="builderReq" placeholder="e.g. <body>,Hello World,</body>" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+         </div>
+         <div style="margin-top:15px;">
+           <label style="color:#cbd5e1; font-size:14px;">Sample Solution (HTML)</label>
+           <textarea id="builderSolution" placeholder="<body>\n  Hello World\n</body>" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2); min-height:100px; font-family:monospace;"></textarea>
+         </div>
+         
+         <button onclick="createNewStage()" style="margin-top:20px; padding:12px 25px; background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(34, 197, 94, 0.3); transition:transform 0.2s;">➕ Add Stage to Database</button>
+       </div>
+    </div>
+
   </div>
 
   <div id="studentContent" style="display:none">
@@ -700,7 +744,7 @@
   let adminStudents = [];
 
   function switchAdminTab(tabId) {
-    const tabs = ['overview', 'timetable', 'grading', 'invoice'];
+    const tabs = ['overview', 'timetable', 'grading', 'invoice', 'builder'];
     tabs.forEach(t => {
       document.getElementById('admin-tab-' + t).style.display = 'none';
       document.getElementById('btn-admin-' + t).classList.remove('active');
@@ -710,6 +754,80 @@
     
     if (tabId === 'overview') loadAdminPanel();
     if (tabId === 'timetable') loadAdminTimetableTab();
+    if (tabId === 'builder') loadAdminBuilderTab();
+  }
+
+  async function loadAdminBuilderTab() {
+    const res = await fetch('/api/courses');
+    const data = await res.json();
+    const select = document.getElementById('builderCourse');
+    select.innerHTML = '<option value="">-- Select a Course --</option>';
+    data.courses.forEach(c => {
+      select.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+    });
+    // Add option to create new course
+    select.innerHTML += '<option value="new">➕ Create New Course...</option>';
+    
+    select.onchange = async (e) => {
+      if(e.target.value === 'new') {
+        const title = prompt("Enter new Course Name:");
+        if(!title) { select.value = ''; return; }
+        const desc = prompt("Enter Course Description:");
+        const res = await fetch('/api/courses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description: desc })
+        });
+        const data = await res.json();
+        if(data.success) {
+          alert('Course created successfully!');
+          loadAdminBuilderTab();
+        } else {
+          alert('Failed to create course');
+        }
+      }
+    };
+  }
+
+  async function createNewStage() {
+    const courseId = document.getElementById('builderCourse').value;
+    const moduleName = document.getElementById('builderModule').value;
+    const title = document.getElementById('builderTitle').value;
+    const question = document.getElementById('builderQuestion').value;
+    const hint = document.getElementById('builderHint').value;
+    const reqStr = document.getElementById('builderReq').value;
+    const sampleSolution = document.getElementById('builderSolution').value;
+    
+    if(!courseId || courseId === 'new') return alert("Please select a valid course.");
+    if(!moduleName || !title || !question || !reqStr || !sampleSolution) return alert("Please fill all required fields.");
+    
+    // We get current orderIndex by fetching stages length
+    const resStages = await fetch('/api/admin/students');
+    const dataStages = await resStages.json();
+    const orderIndex = dataStages.totalStages;
+    
+    const requiredElements = reqStr.split(',').map(s => s.trim());
+    
+    const res = await fetch('/api/stages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        courseId: parseInt(courseId),
+        module: moduleName,
+        title, question, hint, requiredElements, sampleSolution, orderIndex
+      })
+    });
+    const data = await res.json();
+    if(data.success) {
+      alert('New stage/lesson added successfully!');
+      // Clear fields
+      document.getElementById('builderTitle').value = '';
+      document.getElementById('builderQuestion').value = '';
+      document.getElementById('builderReq').value = '';
+      document.getElementById('builderSolution').value = '';
+    } else {
+      alert('Failed to add stage: ' + (data.error?.message || 'Unknown error'));
+    }
   }
 
   async function loadAdminPanel() {
