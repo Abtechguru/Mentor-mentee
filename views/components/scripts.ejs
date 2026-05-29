@@ -427,15 +427,24 @@
   let adminStudents = [];
 
   function switchAdminTab(tabId) {
-    const tabs = ['overview', 'timetable', 'grading', 'invoice', 'builder', 'profile', 'aichat', 'ide'];
+    const tabs = ['overview', 'timetable', 'grading', 'invoice', 'builder', 'profile', 'aichat', 'ide', 'analytics', 'messages'];
     tabs.forEach(t => {
       const tabEl = document.getElementById('admin-tab-' + t);
       if(tabEl) tabEl.style.display = 'none';
       const btnEl = document.getElementById('btn-admin-' + t);
       if(btnEl) btnEl.classList.remove('active');
     });
-    const activeTab = document.getElementById('admin-tab-' + tabId);
-    if(activeTab) activeTab.style.display = 'block';
+    
+    const ideTab = document.getElementById('tab-ide');
+    if (ideTab) ideTab.style.display = 'none';
+    
+    if (tabId === 'ide') {
+      if (ideTab) ideTab.style.display = 'block';
+    } else {
+      const activeTab = document.getElementById('admin-tab-' + tabId);
+      if(activeTab) activeTab.style.display = 'block';
+    }
+    
     const activeBtn = document.getElementById('btn-admin-' + tabId);
     if(activeBtn) activeBtn.classList.add('active');
     
