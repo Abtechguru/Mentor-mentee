@@ -194,18 +194,25 @@ app.post('/api/attempt', async (req, res) => {
   const currentStageIdx = row.currentStage || 0;
   const stage = dbStages[currentStageIdx];
   
+  if (!stage) return res.status(400).json({ error: 'Stage not found' });
+  
   const attempts = JSON.parse(row.attempts || '{}');
   const answers = JSON.parse(row.answers || '{}');
   const completedStages = JSON.parse(row.completedStages || '[]');
   
   let attemptCount = (attempts[currentStageIdx] || 0) + 1;
   attempts[currentStageIdx] = attemptCount;
-  answers[currentStageIdx] = code;
+  answers[currentStageIdx] = code || '';
   
   let reqElements = [];
-  try { reqElements = JSON.parse(stage.requiredElements); } catch(e) { reqElements = stage.requiredElements.split(','); }
+  if (stage.requiredElements) {
+    try { 
+      reqElements = typeof stage.requiredElements === 'string' ? JSON.parse(stage.requiredElements) : stage.requiredElements; 
+      if (!Array.isArray(reqElements)) reqElements = stage.requiredElements.split(',');
+    } catch(e) { reqElements = stage.requiredElements.split(','); }
+  }
   
-  let missing = reqElements.filter(req => !code.toLowerCase().includes(req.toLowerCase()));
+  let missing = reqElements.filter(req => !(code || '').toLowerCase().includes(req.toLowerCase()));
   
   if (missing.length === 0) {
     if (!completedStages.includes(currentStageIdx)) completedStages.push(currentStageIdx);

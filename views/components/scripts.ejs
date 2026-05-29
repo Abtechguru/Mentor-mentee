@@ -5,7 +5,7 @@
   let userProgress = null;
   
   function switchTab(tabId) {
-    const tabs = ['sandbox', 'profile', 'messages', 'schedule', 'assignments', 'aichat'];
+    const tabs = ['sandbox', 'profile', 'messages', 'schedule', 'assignments', 'aichat', 'ide'];
     tabs.forEach(t => {
       document.getElementById('tab-' + t).style.display = 'none';
       const btn = document.getElementById('btn-' + t);
@@ -19,6 +19,7 @@
     if (tabId === 'messages') loadMessagesTab();
     if (tabId === 'schedule') loadScheduleTab();
     if (tabId === 'assignments') loadAssignmentsTab();
+    if (tabId === 'ide') loadIdeTab();
   }
 
   async function loadScheduleTab() {
@@ -244,10 +245,11 @@
     
     const res = await fetch('/api/mentors');
     const data = await res.json();
+    const mentorsList = data.mentors || [];
     const mentorDiv = document.getElementById('mentorDetails');
     
     if (currentUser.mentorId) {
-      const myMentor = data.mentors.find(m => m.id === currentUser.mentorId);
+      const myMentor = mentorsList.find(m => m.id === currentUser.mentorId);
       if(myMentor) {
         mentorDiv.innerHTML = `
           <div style="display:flex; flex-direction:column; gap:15px; background:rgba(255,255,255,0.05); padding:20px; border-radius:10px;">
@@ -268,7 +270,7 @@
       let html = `<p style="margin-bottom:15px; color:#f87171;">You do not have a mentor assigned yet. Please select one below:</p>`;
       html += `<select id="mentorSelect" style="width:100%; padding:12px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid #4ade80; margin-bottom:15px;">`;
       html += `<option value="">-- Choose a Mentor --</option>`;
-      data.mentors.forEach(m => {
+      mentorsList.forEach(m => {
         const expertiseStr = m.expertise ? ` - ${m.expertise}` : '';
         html += `<option value="${m.id}">${m.name}${expertiseStr}</option>`;
       });
@@ -418,7 +420,7 @@
   let adminStudents = [];
 
   function switchAdminTab(tabId) {
-    const tabs = ['overview', 'timetable', 'grading', 'invoice', 'builder', 'profile', 'aichat'];
+    const tabs = ['overview', 'timetable', 'grading', 'invoice', 'builder', 'profile', 'aichat', 'ide'];
     tabs.forEach(t => {
       const tabEl = document.getElementById('admin-tab-' + t);
       if(tabEl) tabEl.style.display = 'none';
@@ -436,6 +438,102 @@
     if (tabId === 'builder') loadAdminBuilderTab();
     if (tabId === 'profile') loadAdminProfileTab();
     if (tabId === 'messages') loadAdminMessagesTab();
+    if (tabId === 'ide') loadIdeTab();
+  }
+
+  // --- IDE & Live Classroom Logic ---
+  async function loadIdeTab() {
+    if (currentUser.role === 'admin') {
+      document.querySelector('.admin-only').style.display = 'block';
+      document.querySelector('.student-only').style.display = 'none';
+      
+      const res = await fetch('/api/admin/students');
+      const data = await res.json();
+      const myStudents = (data.students || []).filter(s => s.mentorId === currentUser.id);
+      const sel = document.getElementById('ideMenteeSelect');
+      sel.innerHTML = '<option value="">Select Student...</option>';
+      myStudents.forEach(s => sel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+    } else {
+      document.querySelector('.admin-only').style.display = 'none';
+      document.querySelector('.student-only').style.display = 'block';
+      
+      const res = await fetch(`/api/assignments/${currentUser.id}/${currentUser.role}`);
+      const data = await res.json();
+      const sel = document.getElementById('ideAssignmentSelect');
+      sel.innerHTML = '<option value="">Select Assignment...</option>';
+      (data.assignments || []).forEach(a => sel.innerHTML += `<option value="${a.id}">${a.title}</option>`);
+    }
+  }
+
+  function loadClassroomIframe() {
+    const link = document.getElementById('ideClassLink').value;
+    if(link) {
+      document.getElementById('ideIframe').src = link.includes('http') ? link : 'https://' + link;
+    }
+  }
+
+  function toggleIdeLayout() {
+    const videoPanel = document.getElementById('ideVideoPanel');
+    const editorPanel = document.getElementById('ideEditorPanel');
+    if(videoPanel.style.display === 'none') {
+      videoPanel.style.display = 'flex';
+      editorPanel.style.flex = '1';
+    } else {
+      videoPanel.style.display = 'none';
+      editorPanel.style.flex = '1';
+    }
+  }
+
+  function exportIdeCode() {
+    const code = document.getElementById('proCodeEditor').value;
+    const lang = document.getElementById('ideLanguage').value;
+    let ext = 'txt';
+    if(lang === 'html') ext = 'html';
+    if(lang === 'css') ext = 'css';
+    if(lang === 'python') ext = 'py';
+    if(lang === 'java') ext = 'java';
+
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `workspace_${new Date().getTime()}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function submitIdeAssignment() {
+    const assignmentId = document.getElementById('ideAssignmentSelect').value;
+    const code = document.getElementById('proCodeEditor').value;
+    if(!assignmentId) return alert("Please select an assignment first.");
+    if(!code) return alert("Code editor is empty.");
+
+    const ext = document.getElementById('ideLanguage').value;
+    const content = `<div style="background:#1e1e1e; color:#d4d4d4; padding:15px; border-radius:8px; font-family:monospace; white-space:pre-wrap;">// Submitted as ${ext.toUpperCase()}<br><br>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+
+    await fetch('/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignmentId, studentId: currentUser.id, content })
+    });
+    alert('Assignment submitted from IDE!');
+  }
+
+  async function sendCodeToMentee() {
+    const studentId = document.getElementById('ideMenteeSelect').value;
+    const code = document.getElementById('proCodeEditor').value;
+    if(!studentId) return alert("Please select a student.");
+    if(!code) return alert("Code editor is empty.");
+
+    const ext = document.getElementById('ideLanguage').value;
+    const content = `<div style="background:#1e1e1e; color:#d4d4d4; padding:15px; border-radius:8px; font-family:monospace; white-space:pre-wrap; font-size:12px;">// Code from Class Session (${ext.toUpperCase()})<br><br>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+
+    await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senderId: currentUser.id, receiverId: studentId, message: content })
+    });
+    alert('Code sent to student messages!');
   }
 
   async function loadAdminGradingTab() {
