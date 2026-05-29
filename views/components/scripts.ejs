@@ -7,7 +7,7 @@
   let userProgress = null;
   
   function switchTab(tabId) {
-    const tabs = ['sandbox', 'profile', 'messages', 'schedule', 'assignments', 'aichat', 'ide'];
+    const tabs = ['sandbox', 'profile', 'messages', 'schedule', 'assignments', 'aichat', 'ide', 'analytics', 'community'];
     tabs.forEach(t => {
       document.getElementById('tab-' + t).style.display = 'none';
       const btn = document.getElementById('btn-' + t);
@@ -22,6 +22,7 @@
     if (tabId === 'schedule') loadScheduleTab();
     if (tabId === 'assignments') loadAssignmentsTab();
     if (tabId === 'ide') loadIdeTab();
+    if (tabId === 'community') loadCommunityTab();
   }
 
   async function loadScheduleTab() {
@@ -1741,6 +1742,53 @@
         list.innerHTML = '<div style="color:#64748b;">No new notifications.</div>';
       }
     } catch(err) {}
+  }
+
+  async function loadCommunityTab() {
+    try {
+      // Load Leaderboard
+      const res = await fetch('/api/admin/students');
+      const data = await res.json();
+      
+      const sortedStudents = (data.students || []).sort((a,b) => b.completedStages.length - a.completedStages.length).slice(0, 5);
+      const lb = document.getElementById('communityLeaderboard');
+      if(lb) {
+        lb.innerHTML = '';
+        sortedStudents.forEach((s, idx) => {
+          let rankIcon = ['🥇','🥈','🥉'][idx] || `<strong style="color:#94a3b8;">#${idx+1}</strong>`;
+          lb.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+               <span style="font-size:18px;">${rankIcon}</span>
+               <img src="${s.profilePic || 'https://ui-avatars.com/api/?name='+s.name+'&background=random'}" style="width:30px; height:30px; border-radius:50%;">
+               <span style="color:#e2e8f0; font-weight:bold;">${s.name}</span>
+            </div>
+            <span style="color:#f59e0b; font-weight:bold;">${s.completedStages.length} Stages</span>
+          </div>`;
+        });
+        if(sortedStudents.length === 0) lb.innerHTML = '<div style="color:#94a3b8;">No learners yet!</div>';
+      }
+
+      // Load Marketplace
+      const mentorRes = await fetch('/api/mentors');
+      const mentorData = await mentorRes.json();
+      
+      const mp = document.getElementById('communityMarketplace');
+      if(mp) {
+        mp.innerHTML = '';
+        (mentorData.mentors || []).forEach(m => {
+          mp.innerHTML += `<div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+             <div>
+               <strong style="color:#f8fafc; font-size:16px;">${m.name}</strong>
+               <div style="color:#10b981; font-size:12px; margin-top:2px;">Expertise: ${m.expertise || 'General Programming'}</div>
+               ${m.bio ? `<div style="color:#94a3b8; font-size:12px; margin-top:5px; font-style:italic;">"${m.bio}"</div>` : ''}
+             </div>
+             <button onclick="switchTab('profile')" style="padding:8px 15px; background:#10b981; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px;">Go to Profile</button>
+          </div>`;
+        });
+      }
+    } catch(err) {
+      console.error(err);
+    }
   }
 </script>
 </body>
