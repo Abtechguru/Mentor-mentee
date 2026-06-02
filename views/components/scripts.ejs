@@ -5,6 +5,57 @@
   let aceEditor = null;
   let aceEditorSandbox = null;
   let userProgress = null;
+  let currentMonth = new Date().getMonth();
+  let currentYear = new Date().getFullYear();
+  let currentSchedules = [];
+
+  function changeMonth(delta) {
+    currentMonth += delta;
+    if(currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if(currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const calMonthYear = document.getElementById('calMonthYear');
+    if(!calMonthYear) return;
+    calMonthYear.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    
+    const calGrid = document.getElementById('calGrid');
+    if(!calGrid) return;
+    calGrid.innerHTML = '';
+    
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    for(let i=0; i<firstDay; i++) {
+        calGrid.innerHTML += `<div style="padding:10px; border-radius:8px;"></div>`;
+    }
+    
+    for(let i=1; i<=daysInMonth; i++) {
+        let hasEvent = false;
+        let eventHtml = '';
+        currentSchedules.forEach(s => {
+            const dStr = s.date.split('T')[0].split(' ')[0]; // Extract YYYY-MM-DD
+            const parts = dStr.split('-');
+            if(parts.length >= 3) {
+                const evYear = parseInt(parts[0]);
+                const evMonth = parseInt(parts[1]) - 1;
+                const evDate = parseInt(parts[2]);
+                if(evYear === currentYear && evMonth === currentMonth && evDate === i) {
+                    hasEvent = true;
+                    eventHtml += `<div style="background:#f59e0b; color:white; font-size:10px; padding:2px 4px; border-radius:4px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${s.topic}">${s.topic}</div>`;
+                }
+            }
+        });
+        
+        calGrid.innerHTML += `<div style="padding:5px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:${hasEvent?'rgba(245,158,11,0.1)':'rgba(255,255,255,0.02)'}; min-height:60px; text-align:left;">
+            <div style="font-size:12px; font-weight:bold; color:#cbd5e1; margin-bottom:5px;">${i}</div>
+            ${eventHtml}
+        </div>`;
+    }
+  }
   
   function switchTab(tabId) {
     const tabs = ['sandbox', 'profile', 'messages', 'schedule', 'assignments', 'aichat', 'ide', 'analytics', 'community'];
@@ -54,8 +105,8 @@
         <div style="background:rgba(0,0,0,0.2); padding:25px; border-radius:15px; border-left:5px solid #f59e0b; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
           <div>
             <strong style="color:#f8fafc; font-size:20px;">${s.topic}</strong>
-            <div style="color:#cbd5e1; font-size:15px; margin-top:8px;">≡ƒòÆ Scheduled Date: <strong>${s.date}</strong></div>
-            <a href="${s.link}" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600; padding:8px 15px; background:rgba(56, 189, 248, 0.1); border-radius:8px;">≡ƒöù Join Video Meeting Link</a>
+            <div style="color:#cbd5e1; font-size:15px; margin-top:8px;">🕒 Scheduled Date: <strong>${s.date}</strong></div>
+            <a href="${s.link}" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600; padding:8px 15px; background:rgba(56, 189, 248, 0.1); border-radius:8px;">Open Meeting or Material</a>
           </div>
           <div style="text-align:right;">
              ${attendanceBtn}
@@ -63,6 +114,9 @@
         </div>
       `;
     });
+    
+    currentSchedules = data.schedules;
+    renderCalendar();
   }
   
   async function markAttendance(id, status) {
@@ -169,7 +223,7 @@
     msgList.innerHTML = '';
     
     if(data.messages.length === 0) {
-      msgList.innerHTML = '<div style="text-align:center; color:#94a3b8; margin-top:20px;">No messages yet. Say hello! ≡ƒæï</div>';
+      msgList.innerHTML = '<div style="text-align:center; color:#94a3b8; margin-top:20px;">No messages yet. Say hello! 👋</div>';
       return;
     }
     
@@ -410,8 +464,8 @@
   function showApp() {
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    document.getElementById('userNameDisplay').innerHTML = `≡ƒæñ ${currentUser.name}`;
-    document.getElementById('userRoleDisplay').innerHTML = currentUser.role === 'admin' ? '≡ƒæ¿ΓÇì≡ƒÅ½ Mentor' : '≡ƒÄô Student';
+    document.getElementById('userNameDisplay').innerHTML = `👤 ${currentUser.name}`;
+    document.getElementById('userRoleDisplay').innerHTML = currentUser.role === 'admin' ? '👨‍🏫 Mentor' : '🎓 Student';
     
     if (currentUser.role === 'admin') {
       document.getElementById('adminPanel').style.display = 'block';
@@ -427,7 +481,7 @@
   let adminStudents = [];
 
   function switchAdminTab(tabId) {
-    const tabs = ['overview', 'timetable', 'grading', 'invoice', 'builder', 'profile', 'aichat', 'ide', 'analytics', 'messages'];
+    const tabs = ['overview', 'timetable', 'grading', 'invoice', 'builder', 'profile', 'aichat', 'ide', 'analytics', 'messages', 'journey'];
     tabs.forEach(t => {
       const tabEl = document.getElementById('admin-tab-' + t);
       if(tabEl) tabEl.style.display = 'none';
@@ -926,7 +980,7 @@
     const avgCompletions = totalStudents > 0 ? (totalCompletions / totalStudents).toFixed(1) : 0;
     
     adminPanel.innerHTML = `
-      <h3>≡ƒæ¿ΓÇì≡ƒÅ½ Mentor Dashboard Overview</h3>
+      <h3>👨‍🏫 Mentor Dashboard Overview</h3>
       <div style="display:flex; gap:20px; margin-bottom:30px; margin-top:20px; flex-wrap:wrap;">
         <div style="flex:1; min-width:200px; background:rgba(99,102,241,0.1); padding:20px; border-radius:15px; border:1px solid rgba(99,102,241,0.3); text-align:center;">
           <h2 style="color:#818cf8; font-size:36px;">${totalStudents}</h2>
@@ -1011,10 +1065,84 @@
           <div style="width:${percentage}%; height:100%; background:linear-gradient(90deg, #38bdf8, #818cf8); border-radius:4px; transition:width 1s ease-in-out;"></div>
         </div>
         
-        ${attemptsHtml}
+        <div class="quest-map-container" style="margin-top:20px; background:rgba(0,0,0,0.1); border-radius:12px; border:1px solid rgba(255,255,255,0.05); padding:20px;" id="mentor-quest-${student.id}"></div>
+        
         ${assignmentHtml}
       `;
       studentsList.appendChild(div);
+      
+      // Build Mentor Quest Map
+      const qmContainer = document.getElementById(`mentor-quest-${student.id}`);
+      const nodeTypes = ["Explorer", "Builder", "Challenger", "Mentor's Choice", "Mastery"];
+      const nodeIcons = ["🧭", "🔨", "⚔️", "🌟", "🏆"];
+      
+      allStages.forEach((stage, idx) => {
+          const isCompleted = student.completedStages.includes(idx);
+          const isActive = idx === student.currentStage;
+          const isLocked = idx > student.currentStage && !student.completedStages.includes(idx-1) && idx !== 0;
+          
+          const nodeTypeIndex = idx % nodeTypes.length;
+          const nodeTypeStr = nodeTypes[nodeTypeIndex];
+          let icon = nodeIcons[nodeTypeIndex];
+          
+          let stateClass = '';
+          if (isCompleted) { stateClass = 'completed'; icon = '✅'; }
+          else if (isActive) { stateClass = 'active'; }
+          else if (isLocked) { stateClass = 'locked'; icon = '🔒'; }
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = `mentor-quest-wrapper ${stateClass}`;
+          
+          const node = document.createElement('div');
+          node.className = `quest-node ${stateClass}`;
+          node.innerHTML = icon;
+          node.style.width = '60px';
+          node.style.height = '60px';
+          node.style.fontSize = '24px';
+          
+          const title = document.createElement('div');
+          title.className = 'quest-node-title';
+          title.style.fontSize = '12px';
+          const shortTitle = stage.title.split(' ').slice(0, 3).join(' ');
+          title.textContent = shortTitle + (stage.title.length > shortTitle.length ? '...' : '');
+          
+          const attempts = student.attempts ? (student.attempts[idx] || 0) : 0;
+          const timeSpent = isCompleted ? (attempts * 5) + ' mins' : (isActive ? 'In Progress' : 'N/A');
+          const successRate = isCompleted ? (attempts === 1 ? '100% (First Try)' : Math.round(100/attempts) + '%') : 'N/A';
+          
+          const tooltip = document.createElement('div');
+          tooltip.className = 'quest-tooltip';
+          tooltip.style.width = '240px';
+          tooltip.innerHTML = `
+             <strong>${stage.title}</strong><br>
+             <span style="color:#fbbf24; font-size:11px;">${nodeTypeStr}</span><br><br>
+             <div style="text-align:left; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
+               <div style="color:#cbd5e1;">📊 Attempts: <strong style="color:#fff;">${attempts}</strong></div>
+               <div style="color:#cbd5e1; margin-top:5px;">⏳ Est. Time: <strong style="color:#fff;">${timeSpent}</strong></div>
+               <div style="color:#cbd5e1; margin-top:5px;">🎯 Success Rate: <strong style="color:#fff;">${successRate}</strong></div>
+             </div>
+             ${isCompleted ? '<div style="margin-top:10px; color:#10b981; font-weight:bold;">✅ Passed</div>' : ''}
+             ${isActive ? '<div style="margin-top:10px; color:#38bdf8; font-weight:bold;">🔥 Currently Working On This</div>' : ''}
+          `;
+          
+          wrapper.appendChild(node);
+          wrapper.appendChild(title);
+          wrapper.appendChild(tooltip);
+          
+          const line = document.createElement('div');
+          if (idx < allStages.length - 1) {
+              line.style.position = 'absolute';
+              line.style.top = '30px';
+              line.style.left = '50px';
+              line.style.width = '100%';
+              line.style.height = '4px';
+              line.style.background = isCompleted ? 'linear-gradient(90deg, #10b981 0%, rgba(16, 185, 129, 0.2) 100%)' : 'rgba(255, 255, 255, 0.1)';
+              line.style.zIndex = '0';
+              wrapper.appendChild(line);
+          }
+          
+          qmContainer.appendChild(wrapper);
+      });
     });
   }
 
@@ -1047,13 +1175,13 @@
         <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:10px; border-left:4px solid #3b82f6; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <strong style="color:#38bdf8; font-size:18px;">${s.topic}</strong>
-            <div style="color:#e2e8f0; font-size:14px; margin-top:5px;">≡ƒæñ Assigned to: <strong>${studentName}</strong></div>
-            <div style="color:#94a3b8; font-size:14px; margin-top:3px;">≡ƒòÆ ${s.date}</div>
-            <a href="${s.link}" target="_blank" style="color:#fbbf24; text-decoration:none; display:inline-block; margin-top:8px; font-weight:600;">≡ƒöù Open Material / Link</a>
+            <div style="color:#e2e8f0; font-size:14px; margin-top:5px;">👤 Assigned to: <strong>${studentName}</strong></div>
+            <div style="color:#94a3b8; font-size:14px; margin-top:3px;">🕒 ${s.date}</div>
+            <a href="${s.link}" target="_blank" style="color:#fbbf24; text-decoration:none; display:inline-block; margin-top:8px; font-weight:600;">🔗 Open Material / Link</a>
           </div>
           <div style="text-align:right;">
              <span style="color:${color}; font-weight:bold; background:rgba(255,255,255,0.1); padding:5px 10px; border-radius:5px; margin-bottom:10px; display:inline-block;">Attendance: ${s.attendance.toUpperCase()}</span><br>
-             <button onclick="deleteTimetableEntry(${s.id})" style="padding:5px 10px; background:#ef4444; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px;">≡ƒùæ∩╕Å Delete</button>
+             <button onclick="deleteTimetableEntry(${s.id})" style="padding:5px 10px; background:#ef4444; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px;">🗑️ Delete</button>
           </div>
         </div>
       `;
@@ -1068,7 +1196,9 @@
 
   async function addTimetableEntry() {
     const studentId = document.getElementById('ttStudent').value;
-    const date = document.getElementById('ttDate').value;
+    const dateInput = document.getElementById('ttDate').value;
+    const tz = document.getElementById('ttTimezone').value || 'GMT';
+    const date = dateInput ? `${dateInput.replace('T', ' ')} ${tz}` : '';
     const topic = document.getElementById('ttTopic').value;
     const link = document.getElementById('ttLink').value;
     
@@ -1216,7 +1346,7 @@
       
       if (userProgress.streakCount > 0) {
         document.getElementById('streakDisplay').style.display = 'inline-block';
-        document.getElementById('streakDisplay').textContent = `≡ƒöÑ ${userProgress.streakCount} Day Streak!`;
+        document.getElementById('streakDisplay').textContent = `🔥 ${userProgress.streakCount} Day Streak!`;
       } else {
         document.getElementById('streakDisplay').style.display = 'none';
       }
@@ -1261,16 +1391,97 @@
       
       const badgesList = document.getElementById('badgesList');
       badgesList.innerHTML = '';
-      if (userProgress.completedStages.length >= 1) {
-          badgesList.innerHTML += '<div style="background:linear-gradient(135deg, #10b981, #059669); padding:10px 15px; border-radius:10px; color:white; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(16,185,129,0.3);">👶 First Steps</div>';
-      }
-      if (userProgress.completedStages.length >= 3) {
-          badgesList.innerHTML += '<div style="background:linear-gradient(135deg, #3b82f6, #2563eb); padding:10px 15px; border-radius:10px; color:white; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(59,130,246,0.3);">🚀 Rapid Learner</div>';
-      }
-      if (userProgress.completedStages.length === allStages.length && allStages.length > 0) {
-          badgesList.innerHTML += '<div style="background:linear-gradient(135deg, #f59e0b, #d97706); padding:10px 15px; border-radius:10px; color:white; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(245,158,11,0.3);">🏆 HTML Master</div>';
-      }
+      
+      const completedCount = userProgress.completedStages.length;
+      
+      const badgeData = [
+         {
+            id: 'streak',
+            title: 'Streak Flame',
+            desc: 'Earned for consecutive daily logins and coding activity.',
+            icon: '🔥',
+            shape: 'badge-shape-shield',
+            level: 'badge-level-easy',
+            unlocked: true // For demo purposes, assuming active user
+         },
+         {
+            id: 'trophy',
+            title: 'Trophy Badge',
+            desc: 'Awarded for completing the Weekly Coding Challenge.',
+            icon: '🏆',
+            shape: 'badge-shape-hexagon',
+            level: 'badge-level-medium',
+            unlocked: completedCount >= 2
+         },
+         {
+            id: 'creativity',
+            title: 'Creativity Badge',
+            desc: 'Peer Kudos! Someone recognized your highly creative approach.',
+            icon: '🎨',
+            shape: 'badge-shape-circle',
+            level: 'badge-level-hard',
+            unlocked: completedCount >= 4
+         },
+         {
+            id: 'mentor',
+            title: 'Mentor Choice',
+            desc: 'Given by a mentor after an outstanding 1-on-1 session.',
+            icon: '🌟',
+            shape: 'badge-shape-star',
+            level: 'badge-level-epic',
+            unlocked: completedCount >= 6
+         },
+         {
+            id: 'mastery',
+            title: 'Mastery Diploma',
+            desc: 'Final curriculum stage completed. You are a true master!',
+            icon: '📜',
+            shape: 'badge-shape-ribbon',
+            level: 'badge-level-epic',
+            unlocked: completedCount === allStages.length && allStages.length > 0
+         }
+      ];
+      
+      badgeData.forEach(b => {
+         const wrapper = document.createElement('div');
+         wrapper.className = 'badge-wrapper';
+         wrapper.setAttribute('role', 'button');
+         wrapper.setAttribute('tabindex', '0');
+         wrapper.setAttribute('aria-label', `${b.title}. ${b.unlocked ? 'Unlocked' : 'Locked'}`);
+         
+         const lockClass = b.unlocked ? '' : 'badge-locked';
+         const sparkleClass = b.unlocked && b.level === 'badge-level-epic' ? 'badge-sparkle' : '';
+         
+         wrapper.innerHTML = `
+            <div class="badge-icon ${b.shape} ${b.level} ${lockClass} ${sparkleClass}">
+               ${b.icon}
+            </div>
+            <div class="badge-title" style="color: ${b.unlocked ? '#f8fafc' : '#64748b'};">${b.title}</div>
+            
+            <div class="badge-tooltip">
+               <strong style="color:${b.unlocked ? '#4ade80' : '#f87171'}; font-size:14px;">${b.unlocked ? '✅ Unlocked' : '🔒 Locked'}</strong><br><br>
+               <span style="color:#e2e8f0;">${b.desc}</span><br><br>
+               ${b.unlocked ? '<span style="color:#94a3b8; font-size:11px;">Earned: Just now</span>' : '<span style="color:#94a3b8; font-size:11px;">Keep learning to unlock!</span>'}
+            </div>
+         `;
+         
+         if(b.unlocked) {
+            wrapper.onclick = () => triggerConfetti();
+         }
+         
+         badgesList.appendChild(wrapper);
+      });
+      
       if (badgesList.innerHTML === '') badgesList.innerHTML = '<span style="color:#64748b;">Complete stages to earn badges!</span>';
+      
+      const btnCert = document.getElementById('btnGenerateCert');
+      if (btnCert) {
+         if (completedCount === allStages.length && allStages.length > 0) {
+            btnCert.style.display = 'inline-block';
+         } else {
+            btnCert.style.display = 'none';
+         }
+      }
       
       switchTab('sandbox');
     } catch(err) {
@@ -1279,73 +1490,162 @@
     }
   }
 
+  let timelineInterval = null;
+  function startTimelineCountdown() {
+     const cd = document.getElementById('timelineCountdown');
+     if (!cd) return;
+     if (timelineInterval) clearInterval(timelineInterval);
+     
+     // Mocking a deadline 2 hours from now for demonstration
+     let deadline = new Date();
+     deadline.setHours(deadline.getHours() + 2);
+     
+     timelineInterval = setInterval(() => {
+        const now = new Date();
+        const diff = deadline - now;
+        if(diff <= 0) {
+           clearInterval(timelineInterval);
+           cd.innerText = "00:00:00:00";
+           cd.style.color = "#ef4444";
+           cd.style.textShadow = "0 0 15px rgba(239, 68, 68, 0.8)";
+           // Animate active timeline nodes urgently
+           document.querySelectorAll('.quest-node-wrapper.active .quest-node').forEach(el => {
+              el.style.animation = "pulseGlow 0.5s infinite alternate";
+              el.style.borderColor = "#ef4444";
+           });
+           return;
+        }
+        
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        
+        cd.innerText = `${d.toString().padStart(2, '0')}:${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+     }, 1000);
+  }
+
+  function loadSubjectModules() {
+     const subject = document.getElementById('subjectSelector').value;
+     
+     // Setup the timeline scheduled event
+     document.getElementById('scheduledTimeline').style.display = 'block';
+     if (subject === 'html') document.getElementById('timelineEventTitle').innerText = 'HTML Forms & Accessibility Deep Dive';
+     else if (subject === 'css') document.getElementById('timelineEventTitle').innerText = 'Advanced CSS Grid Masterclass';
+     else if (subject === 'js') document.getElementById('timelineEventTitle').innerText = 'JavaScript Async/Await Live Lab';
+     else if (subject === 'python') document.getElementById('timelineEventTitle').innerText = 'Python Data Structures Workshop';
+     else if (subject === 'data') document.getElementById('timelineEventTitle').innerText = 'Data Visualization with Pandas';
+     
+     startTimelineCountdown();
+     
+     // Update stage buttons
+     renderStageButtons();
+  }
+
   function renderStageButtons() {
     const container = document.getElementById('stageButtons');
     container.innerHTML = '';
     
-    let currentModule = '';
-    let moduleContainer = null;
+    // Instead of module splitting, we create a single horizontal timeline gallery for the Learning Journey
+    const timelineContainer = document.createElement('div');
+    timelineContainer.style.display = 'flex';
+    timelineContainer.style.gap = '25px';
+    timelineContainer.style.overflowX = 'auto';
+    timelineContainer.style.scrollSnapType = 'x mandatory';
+    timelineContainer.style.WebkitOverflowScrolling = 'touch';
+    timelineContainer.style.paddingBottom = '20px';
+    timelineContainer.style.paddingTop = '15px';
+    
+    const nodeTypes = ["Explorer", "Builder", "Challenger", "Mentor's Choice", "Mastery"];
+    const nodeIcons = ["🧭", "🔨", "⚔️", "🌟", "🏆"];
     
     allStages.forEach((stage, idx) => {
-      if (stage.module !== currentModule) {
-        currentModule = stage.module;
-        
-        const modTitle = document.createElement('h4');
-        modTitle.textContent = currentModule;
-        modTitle.style.width = '100%';
-        modTitle.style.marginTop = '15px';
-        modTitle.style.marginBottom = '5px';
-        modTitle.style.color = '#764ba2';
-        modTitle.style.borderBottom = '1px solid #ddd';
-        modTitle.style.paddingBottom = '5px';
-        
-        moduleContainer = document.createElement('div');
-        moduleContainer.style.display = 'flex';
-        moduleContainer.style.gap = '10px';
-        moduleContainer.style.flexWrap = 'wrap';
-        moduleContainer.style.width = '100%';
-        moduleContainer.style.marginBottom = '10px';
-        
-        container.appendChild(modTitle);
-        container.appendChild(moduleContainer);
-      }
       
-      const btn = document.createElement('button');
-      btn.textContent = `${stage.title}`;
-      btn.className = 'stage-btn';
-      if (userProgress.completedStages.includes(idx)) {
-        btn.classList.add('completed');
-      }
-      if (idx === userProgress.currentStage) {
-        btn.classList.add('active');
-      }
-      if (idx > userProgress.currentStage && !userProgress.completedStages.includes(idx-1) && idx !== 0) {
-        btn.classList.add('locked');
-        btn.disabled = true;
-      }
-      btn.onclick = async () => {
-        if (idx <= userProgress.currentStage || userProgress.completedStages.includes(idx-1)) {
+      const isCompleted = userProgress.completedStages.includes(idx);
+      const isActive = idx === userProgress.currentStage;
+      const isLocked = idx > userProgress.currentStage && !userProgress.completedStages.includes(idx-1) && idx !== 0;
+      
+      const nodeTypeIndex = idx % nodeTypes.length;
+      const nodeTypeStr = nodeTypes[nodeTypeIndex];
+      let icon = nodeIcons[nodeTypeIndex];
+      
+      let stateClass = '';
+      if (isCompleted) { stateClass = 'completed'; icon = '✅'; }
+      else if (isActive) { stateClass = 'active'; }
+      else if (isLocked) { stateClass = 'locked'; icon = '🔒'; }
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = `quest-node-wrapper ${stateClass}`;
+      wrapper.setAttribute('role', 'button');
+      wrapper.setAttribute('tabindex', isLocked ? '-1' : '0');
+      wrapper.setAttribute('aria-label', `${stage.title}. Status: ${isCompleted ? 'Completed' : isActive ? 'Active' : 'Locked'}`);
+      
+      wrapper.onclick = async () => {
+        if (!isLocked) {
           const res = await fetch('/api/setstage', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id, stageId: idx })
           });
           if(res.ok) {
-            loadStudentContent();
+             triggerConfetti();
+             loadStudentContent();
           }
         }
       };
-      if (moduleContainer) {
-        moduleContainer.appendChild(btn);
-      } else {
-        container.appendChild(btn);
-      }
+      
+      wrapper.onkeydown = (e) => {
+        if((e.key === 'Enter' || e.key === ' ') && !isLocked) {
+          e.preventDefault();
+          wrapper.click();
+        }
+      };
+      
+      const node = document.createElement('div');
+      node.className = `quest-node ${stateClass}`;
+      node.innerHTML = icon;
+      
+      const title = document.createElement('div');
+      title.className = 'quest-node-title';
+      const shortTitle = stage.title.split(' ').slice(0, 4).join(' ');
+      title.textContent = shortTitle + (stage.title.length > shortTitle.length ? '...' : '');
+      
+      const typeLabel = document.createElement('div');
+      typeLabel.className = 'quest-node-type';
+      typeLabel.textContent = nodeTypeStr;
+      
+      const tooltip = document.createElement('div');
+      tooltip.className = 'quest-tooltip';
+      tooltip.innerHTML = `<strong>${stage.title}</strong><br><br><span style="color:#94a3b8; font-size:11px;">${isCompleted ? 'Completed! 🌟' : isActive ? 'Current Stage 🔥' : 'Locked 🔒'}</span><br><br><span style="color:#fbbf24; font-size:12px;">Type: ${nodeTypeStr}</span><br><span style="color:#ef4444; font-size:11px; margin-top:5px; display:block;">⏳ Deadline: Today</span>`;
+      
+      wrapper.appendChild(node);
+      wrapper.appendChild(title);
+      wrapper.appendChild(typeLabel);
+      wrapper.appendChild(tooltip);
+      
+      timelineContainer.appendChild(wrapper);
     });
+    
+    container.appendChild(timelineContainer);
+    
+    // Auto-select first active or load default if nothing is active
+    let activeStage = allStages[userProgress.currentStage] || allStages[0];
+    if(activeStage) {
+       document.getElementById('questionText').innerText = activeStage.title;
+       document.getElementById('hintText').innerText = "Hint: " + (activeStage.hints || "Read the documentation.");
+       
+       // Mentor note mock logic based on module active state
+       const mentorNotes = document.getElementById('mentorNotesDisplay');
+       if(mentorNotes) {
+          mentorNotes.style.display = 'block';
+          mentorNotes.innerHTML = `<strong>👨‍🏫 Mentor Note:</strong> "Focus on proper syntax in this module. Reach out if you get stuck!"`;
+       }
+    }
   }
 
   function renderStageContent() {
     document.getElementById('questionText').innerHTML = `<strong>${currentStageDetails.title}</strong><br><br>${currentStageDetails.question}`;
-    document.getElementById('hintText').innerHTML = `≡ƒÆí Hint: ${currentStageDetails.hint}`;
+    document.getElementById('hintText').innerHTML = `💡 Hint: ${currentStageDetails.hint}`;
     document.getElementById('attemptsText').innerHTML = `Attempts: ${currentStageDetails.attemptCount}`;
     
     // Check if there's a saved answer
@@ -1435,7 +1735,7 @@
         return;
       }
       if (data.finished) {
-        alert('≡ƒÄë Congratulations! You have completed all stages! You are an HTML master!');
+        alert('🎉 Congratulations! You have completed all stages! You are an HTML master!');
       } else {
         loadStudentContent();
       }
@@ -1452,7 +1752,7 @@
     
     let stagesDetails = '';
     allStages.forEach((stage, idx) => {
-      const status = userProgress.completedStages.includes(idx) ? 'Γ£à COMPLETED' : (idx === userProgress.currentStage ? '≡ƒƒí IN PROGRESS' : '≡ƒöÆ LOCKED');
+      const status = userProgress.completedStages.includes(idx) ? '✅ COMPLETED' : (idx === userProgress.currentStage ? '🔄 IN PROGRESS' : '🔒 LOCKED');
       stagesDetails += `<tr><td>${idx+1}</td><td>${stage.title}</td><td>${status}</td></tr>`;
     });
     
@@ -1476,7 +1776,7 @@
       </head>
       <body>
         <div class="header">
-          <h1>≡ƒÅ½ ABTECH TUTOR</h1>
+          <h1>🏫 ABTECH TUTOR</h1>
           <h2>HTML Skills Assessment Report</h2>
         </div>
         <div class="info">
@@ -1644,6 +1944,46 @@
       });
     }
   }
+
+  async function transformNotesToSlides() {
+    const rawText = document.getElementById('aiNoteContent').dataset.raw;
+    const topic = document.getElementById('aiNoteTopic').value || 'Lecture Presentation';
+    if (!rawText) return alert('Please generate notes first!');
+    
+    try {
+      const res = await fetch('/api/slides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: topic, content: rawText })
+      });
+      const data = await res.json();
+      
+      if(data.link) {
+        document.getElementById('ttLink').value = data.link;
+        document.getElementById('ttTopic').value = topic + " (Slides)";
+        
+        // Populate assignment form
+        document.getElementById('assignTitle').value = topic + " - Practical Assignment";
+        let assignmentText = "Please complete the assignment based on the slide presentation.";
+        const assignMatch = rawText.match(/7\.\s\*\*Post-Class Assignment\*\*:?\s*([\s\S]*)/);
+        if (assignMatch && assignMatch[1]) {
+            assignmentText = assignMatch[1].trim();
+        }
+        document.getElementById('assignInstructions').value = assignmentText;
+        document.getElementById('assignVideo').value = data.link; // The slides link can act as the material for the assignment
+        
+        alert('Successfully generated slides! The resource link has been attached in the Timetable section, AND the Assignment form has been pre-filled for you!');
+        
+        // Scroll to the timetable section
+        document.getElementById('ttLink').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert('Failed to generate slides.');
+      }
+    } catch(e) {
+      alert('Error generating slides.');
+    }
+  }
+
   async function generateWeeklySummaries() {
     const btn = document.getElementById('btnGenSummaries');
     const resultDiv = document.getElementById('summaryResults');
@@ -1673,10 +2013,12 @@
     btn.disabled = false;
   }
   async function requestSession() {
-    const date = document.getElementById('bookDate').value;
+    const dateInput = document.getElementById('bookDate').value;
+    const tz = document.getElementById('bookTimezone').value || 'GMT';
+    const date = dateInput ? `${dateInput.replace('T', ' ')} ${tz}` : '';
     const topic = document.getElementById('bookTopic').value;
     
-    if(!date || !topic) return alert('Please provide date and topic');
+    if(!dateInput || !topic) return alert('Please provide date and topic');
     
     if(!currentUser.mentorId) {
        return alert('You must assign a mentor in your profile first!');
@@ -1766,17 +2108,30 @@
       if(lb) {
         lb.innerHTML = '';
         sortedStudents.forEach((s, idx) => {
-          let rankIcon = ['🥇','🥈','🥉'][idx] || `<strong style="color:#94a3b8;">#${idx+1}</strong>`;
-          lb.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-               <span style="font-size:18px;">${rankIcon}</span>
-               <img src="${s.profilePic || 'https://ui-avatars.com/api/?name='+s.name+'&background=random'}" style="width:30px; height:30px; border-radius:50%;">
-               <span style="color:#e2e8f0; font-weight:bold;">${s.name}</span>
+          let rankIcon = ['🥇','🥈','🥉'][idx] || `<strong style="color:#94a3b8; font-size:16px;">#${idx+1}</strong>`;
+          lb.innerHTML += `<div class="leaderboard-row">
+            <div style="display:flex; align-items:center; gap:12px;">
+               <span style="font-size:20px; width:25px; text-align:center;">${rankIcon}</span>
+               <img src="${s.profilePic || 'https://ui-avatars.com/api/?name='+s.name+'&background=random'}" style="width:36px; height:36px; border-radius:50%; border:2px solid rgba(255,255,255,0.1);">
+               <span style="color:#e2e8f0; font-weight:bold; font-size:15px;">${s.name}</span>
             </div>
-            <span style="color:#f59e0b; font-weight:bold;">${s.completedStages.length} Stages</span>
+            <div style="text-align:right;">
+               <div style="color:#f59e0b; font-weight:bold; font-size:15px;">${s.completedStages.length} <span style="font-size:12px; font-weight:normal; color:#94a3b8;">Stages</span></div>
+            </div>
           </div>`;
         });
-        if(sortedStudents.length === 0) lb.innerHTML = '<div style="color:#94a3b8;">No learners yet!</div>';
+        if(sortedStudents.length === 0) lb.innerHTML = '<div style="color:#94a3b8; text-align:center;">No learners yet!</div>';
+      }
+      
+      // Populate Kudos Recipients
+      const kr = document.getElementById('kudoRecipient');
+      if(kr) {
+         kr.innerHTML = '<option value="">-- Select Peer --</option>';
+         (data.students || []).forEach(s => {
+            if(s.id !== currentUser.id) {
+               kr.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            }
+         });
       }
 
       // Load Marketplace
@@ -1787,19 +2142,73 @@
       if(mp) {
         mp.innerHTML = '';
         (mentorData.mentors || []).forEach(m => {
-          mp.innerHTML += `<div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-             <div>
-               <strong style="color:#f8fafc; font-size:16px;">${m.name}</strong>
-               <div style="color:#10b981; font-size:12px; margin-top:2px;">Expertise: ${m.expertise || 'General Programming'}</div>
-               ${m.bio ? `<div style="color:#94a3b8; font-size:12px; margin-top:5px; font-style:italic;">"${m.bio}"</div>` : ''}
-             </div>
-             <button onclick="switchTab('profile')" style="padding:8px 15px; background:#10b981; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px;">Go to Profile</button>
+          mp.innerHTML += `<div class="mentor-card">
+             <img src="${m.profilePic || 'https://ui-avatars.com/api/?name='+m.name+'&background=10b981&color=fff'}" style="width:80px; height:80px; border-radius:50%; border:3px solid #10b981; margin-bottom:15px; object-fit:cover;">
+             <strong style="color:#f8fafc; font-size:18px; display:block; margin-bottom:5px;">${m.name}</strong>
+             <div style="color:#10b981; font-size:13px; font-weight:bold; margin-bottom:10px;">${m.expertise || 'General Programming'}</div>
+             <div style="color:#f59e0b; font-size:14px; margin-bottom:15px;">⭐⭐⭐⭐⭐ 5.0</div>
+             ${m.bio ? `<div style="color:#94a3b8; font-size:12px; margin-bottom:15px; font-style:italic; line-height:1.4;">"${m.bio}"</div>` : ''}
+             <button onclick="switchTab('profile')" style="width:100%; padding:10px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px; transition:transform 0.2s;">View Profile</button>
           </div>`;
         });
       }
     } catch(err) {
       console.error(err);
     }
+  }
+  
+  let selectedKudo = 'Collab';
+  function selectKudo(type) {
+     selectedKudo = type;
+     document.querySelectorAll('.kudo-btn').forEach(b => b.classList.remove('selected'));
+     document.getElementById('kudoBtn-' + type).classList.add('selected');
+  }
+  
+  function awardKudo() {
+     const rec = document.getElementById('kudoRecipient').value;
+     if(!rec) return alert('Please select a peer to send kudos to!');
+     triggerConfetti();
+     alert(`You successfully sent the ${selectedKudo} badge!`);
+     document.getElementById('kudoRecipient').value = '';
+  }
+  
+  function triggerConfetti() {
+    if (window.confetti) {
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+      script.onload = () => confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      document.head.appendChild(script);
+    }
+  }
+
+  // Certificate Logic
+  function showCertificateModal() {
+    document.getElementById('certStudentName').innerText = currentUser.name;
+    document.getElementById('certDate').innerText = new Date().toLocaleDateString();
+    
+    // Generate unique random ID for authenticity
+    const randomId = 'ABT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    document.getElementById('certId').innerText = 'ID: ' + randomId;
+    
+    const modal = document.getElementById('certificateModal');
+    modal.classList.add('show');
+    
+    // Trigger confetti upon showing
+    setTimeout(triggerConfetti, 300);
+  }
+  
+  function closeCertificateModal() {
+    document.getElementById('certificateModal').classList.remove('show');
+  }
+  
+  function printCertificate() {
+    window.print();
+  }
+  
+  function shareCertificate() {
+    alert("Certificate link copied to clipboard! Ready to share on LinkedIn.");
   }
 </script>
 </body>

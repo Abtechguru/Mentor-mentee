@@ -1,4 +1,4 @@
-<div id="studentContent" style="display:none">
+<div id="studentContent">
     <div class="glass-panel fade-in" style="display:flex; gap:15px; margin-bottom:20px; padding:15px; flex-wrap:wrap;">
       <button class="stage-btn active" onclick="switchTab('sandbox')" id="btn-sandbox">💻 Code Sandbox</button>
       <button class="stage-btn" onclick="switchTab('profile')" id="btn-profile">👤 Profile & Mentor</button>
@@ -15,12 +15,31 @@
     <div id="tab-sandbox">
       <div class="content-area">
         <div class="stages-section glass-panel fade-in">
-          <h3>📚 Your Learning Journey</h3>
-          <div class="stage-buttons" id="stageButtons"></div>
-          <div class="question-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+             <h3 style="margin:0;">📚 Learning Journey</h3>
+             <select id="subjectSelector" onchange="loadSubjectModules()" style="padding:8px 15px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2); font-weight:bold; cursor:pointer;">
+                <option value="html">HTML Foundations</option>
+                <option value="css">CSS Design</option>
+                <option value="js">JavaScript Logic</option>
+                <option value="python">Python Algorithms</option>
+                <option value="data">Data Science</option>
+             </select>
+          </div>
+          
+          <div id="scheduledTimeline" style="margin-bottom:20px; padding:15px; background:rgba(245,158,11,0.1); border-left:4px solid #f59e0b; border-radius:8px; display:none;">
+             <strong style="color:#f59e0b; display:block; margin-bottom:5px;">⏰ Next Live Class / Assignment Deadline</strong>
+             <div style="color:#fff; font-size:14px; margin-bottom:10px;" id="timelineEventTitle">Advanced CSS Grid Masterclass</div>
+             <div id="timelineCountdown" style="color:#f59e0b; font-size:24px; font-weight:bold; font-family:'Fira Code', monospace; text-shadow:0 0 10px rgba(245,158,11,0.5);">02:14:59:59</div>
+          </div>
+          
+          <div class="stage-buttons" id="stageButtons" style="padding-bottom: 10px;"></div>
+          
+          <div class="question-box" style="margin-top:20px; position:relative;">
             <div class="question-text" id="questionText"></div>
             <div class="hint" id="hintText"></div>
             <div class="hint" id="attemptsText" style="background:rgba(255,255,255,0.1); color:#fff; border:none; margin-top:5px;"></div>
+            <!-- Mentor notes display -->
+            <div id="mentorNotesDisplay" style="display:none; margin-top:10px; padding:10px; background:rgba(16,185,129,0.1); border-left:3px solid #10b981; border-radius:4px; color:#a7f3d0; font-size:13px; font-style:italic;"></div>
           </div>
           <div class="feedback" id="feedback"></div>
         </div>
@@ -123,7 +142,21 @@
            <div style="display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
              <div style="flex:1; min-width:200px;">
                <label style="color:#cbd5e1; font-size:14px;">Date & Time</label>
-               <input type="datetime-local" id="bookDate" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+               <div style="display:flex; gap:10px; margin-top:5px;">
+                 <input type="datetime-local" id="bookDate" style="flex:2; padding:10px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+                 <select id="bookTimezone" style="flex:1; padding:10px; border-radius:8px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+                   <option value="GMT">GMT</option>
+                   <option value="EST">EST</option>
+                   <option value="CST">CST</option>
+                   <option value="MST">MST</option>
+                   <option value="PST">PST</option>
+                   <option value="CET">CET</option>
+                   <option value="WAT">WAT</option>
+                   <option value="EAT">EAT</option>
+                   <option value="IST">IST</option>
+                   <option value="AEST">AEST</option>
+                 </select>
+               </div>
              </div>
              <div style="flex:2; min-width:250px;">
                <label style="color:#cbd5e1; font-size:14px;">Topic / Help Needed</label>
@@ -134,6 +167,17 @@
          </div>
          
          <h4 style="color:#fff; margin-bottom:15px;">My Upcoming Classes</h4>
+         <div id="studentCalendar" style="background:rgba(0,0,0,0.2); border-radius:15px; padding:20px; border:1px solid rgba(255,255,255,0.1); margin-bottom:20px;">
+           <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+             <button onclick="changeMonth(-1)" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:18px;">&lt; Prev</button>
+             <h4 id="calMonthYear" style="color:#fff; margin:0;"></h4>
+             <button onclick="changeMonth(1)" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:18px;">Next &gt;</button>
+           </div>
+           <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; text-align:center; color:#94a3b8; font-size:12px; font-weight:bold; margin-bottom:10px;">
+             <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+           </div>
+           <div id="calGrid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:5px;"></div>
+         </div>
          <div id="scheduleList" style="display:flex; flex-direction:column; gap:15px;">
             <!-- Schedules go here -->
          </div>
@@ -151,9 +195,12 @@
     
     <div id="tab-analytics" style="display:none;" class="glass-panel fade-in">
        <div style="padding:30px;">
-         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
            <h3 style="color:#fff; font-size:24px;">📈 Analytics & Certificates</h3>
-           <button onclick="printResult()" style="padding:10px 20px; background:#8b5cf6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">🖨️ Print Skill Report</button>
+           <div style="display:flex; gap:15px;">
+             <button onclick="showCertificateModal()" id="btnGenerateCert" style="display:none; padding:10px 20px; background:linear-gradient(135deg, #d4af37, #aa771c); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(212,175,55,0.4); transition:transform 0.2s;">📜 View Mastery Certificate</button>
+             <button onclick="printResult()" style="padding:10px 20px; background:#8b5cf6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(139,92,246,0.3); transition:transform 0.2s;">🖨️ Print Skill Report</button>
+           </div>
          </div>
          
          <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px;">
@@ -176,8 +223,8 @@
            </div>
          </div>
          
-         <h4 style="color:#fff; margin-bottom:15px;">🏅 Badges & Achievements</h4>
-         <div id="badgesList" style="display:flex; gap:15px; flex-wrap:wrap;">
+         <h4 style="color:#fff; margin-bottom:15px; display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">🏅</span> Badges & Achievements</h4>
+         <div id="badgesList" class="badge-gallery-container">
            <!-- Badges will be generated dynamically -->
          </div>
        </div>
@@ -187,49 +234,126 @@
        <div style="padding:30px;">
          <h3 style="margin-bottom:20px; color:#fff; font-size:24px;">🌐 Community & Growth</h3>
          
-         <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px;">
-           <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); border-left:4px solid #f59e0b;">
-             <h4 style="color:#f59e0b; margin-bottom:15px;">🏆 Global Leaderboard</h4>
-             <div id="communityLeaderboard" style="display:flex; flex-direction:column; gap:10px;">
-                <!-- Populated dynamically -->
+         <!-- Top Row: Challenge & Leaderboard -->
+         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:25px; margin-bottom:30px;">
+           
+           <!-- Weekly Challenge -->
+           <div class="community-card challenge-card" tabindex="0" aria-label="Weekly Coding Challenge">
+             <div class="challenge-header">
+               <span style="font-size:30px;">🚀</span>
+               <h4 style="color:#fff; margin:0;">Weekly Coding Challenge</h4>
+             </div>
+             <p style="color:#cbd5e1; font-size:14px; margin:15px 0;">Build a responsive CSS Grid layout without media queries. <a href="#" style="color:#38bdf8;">View Details</a></p>
+             <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; text-align:center; margin-bottom:20px; border:1px solid rgba(255,255,255,0.05);">
+               <div style="color:#94a3b8; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;">Time Remaining</div>
+               <div id="challengeCountdown" style="color:#f59e0b; font-size:28px; font-weight:bold; font-family:'Fira Code', monospace; text-shadow:0 0 10px rgba(245,158,11,0.5);">4d 12h 30m</div>
+             </div>
+             <div style="display:flex; justify-content:space-between; align-items:center;">
+               <div style="display:flex; align-items:center; gap:8px;">
+                 <span style="font-size:24px;">🏅</span>
+                 <span style="color:#4ade80; font-weight:bold; font-size:14px;">Grid Master Badge</span>
+               </div>
+               <button class="join-btn" onclick="alert('Joined challenge! Check your IDE for instructions.'); triggerConfetti();">Join Now</button>
              </div>
            </div>
-           
-           <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); border-left:4px solid #3b82f6;">
-             <h4 style="color:#3b82f6; margin-bottom:15px;">📚 Resource Library</h4>
-             <div style="display:flex; flex-direction:column; gap:10px;">
-                <a href="https://developer.mozilla.org" target="_blank" style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color:#e2e8f0; text-decoration:none; transition:background 0.2s;">MDN Web Docs (HTML/CSS/JS) ↗️</a>
-                <a href="https://freecodecamp.org" target="_blank" style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color:#e2e8f0; text-decoration:none; transition:background 0.2s;">FreeCodeCamp Tutorials ↗️</a>
-                <a href="https://w3schools.com" target="_blank" style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color:#e2e8f0; text-decoration:none; transition:background 0.2s;">W3Schools Code References ↗️</a>
-                <a href="#" onclick="alert('PDF downloaded!')" style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color:#e2e8f0; text-decoration:none; transition:background 0.2s;">Download Mentor Curriculum (PDF) ⬇️</a>
+
+           <!-- Global Leaderboard -->
+           <div class="community-card leaderboard-card">
+             <h4 style="color:#f59e0b; margin-bottom:15px; display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">🏆</span> Global Leaderboard</h4>
+             <div id="communityLeaderboard" style="display:flex; flex-direction:column; gap:10px;">
+                <!-- Populated dynamically in scripts.ejs -->
              </div>
            </div>
          </div>
-         
-         <div style="display:flex; gap:20px; flex-wrap:wrap;">
-           <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); border-left:4px solid #10b981;">
-             <h4 style="color:#10b981; margin-bottom:15px;">🛒 Mentor Marketplace</h4>
-             <p style="color:#cbd5e1; font-size:14px; margin-bottom:15px;">Browse available mentors and find the perfect match for your next course!</p>
-             <div id="communityMarketplace" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;">
-                <!-- Populated dynamically -->
-             </div>
-           </div>
+
+         <!-- Middle Row: Peer Kudos & Resources -->
+         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:25px; margin-bottom:30px;">
            
-           <div style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); border-left:4px solid #8b5cf6;">
-             <h4 style="color:#8b5cf6; margin-bottom:15px;">💬 Forums & Clubs</h4>
-             <div style="display:flex; flex-direction:column; gap:10px;">
-                <div style="padding:15px; background:rgba(255,255,255,0.05); border-radius:8px;">
-                  <strong style="color:#f8fafc;"> Weekly Coding Challenge</strong>
-                  <p style="color:#94a3b8; font-size:12px; margin-top:5px;">Build a responsive CSS Grid layout without media queries. <a href="#" style="color:#3b82f6;">Join Discussion</a></p>
-                </div>
-                <div style="padding:15px; background:rgba(255,255,255,0.05); border-radius:8px;">
-                  <strong style="color:#f8fafc;">📐 Math Competitions Club</strong>
-                  <p style="color:#94a3b8; font-size:12px; margin-top:5px;">Prepare for the upcoming logic & algorithm challenge. <a href="#" style="color:#3b82f6;">Enter Room</a></p>
-                </div>
+           <!-- Peer Kudos -->
+           <div class="community-card kudos-card">
+             <h4 style="color:#a855f7; margin-bottom:15px; display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">✨</span> Peer Kudos</h4>
+             <p style="color:#cbd5e1; font-size:14px; margin-bottom:20px;">Award badges to peers for their help, creativity, or perseverance!</p>
+             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+               <button class="kudo-btn selected" id="kudoBtn-Collab" onclick="selectKudo('Collab')">🤝 Collab</button>
+               <button class="kudo-btn" id="kudoBtn-Creative" onclick="selectKudo('Creative')">🎨 Creative</button>
+               <button class="kudo-btn" id="kudoBtn-Persistent" onclick="selectKudo('Persistent')">💪 Persistent</button>
+             </div>
+             <div style="display:flex; gap:10px; align-items:center;">
+               <select id="kudoRecipient" style="flex:1; padding:12px; border-radius:10px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">
+                 <!-- Populated dynamically -->
+               </select>
+               <button onclick="awardKudo()" style="padding:12px 25px; background:linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold; box-shadow:0 4px 15px rgba(168,85,247,0.3); transition:transform 0.2s;">Send</button>
              </div>
            </div>
+
+           <!-- Resources -->
+           <div class="community-card resources-card">
+             <h4 style="color:#38bdf8; margin-bottom:15px; display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">📚</span> Resource Library</h4>
+             <p style="color:#cbd5e1; font-size:14px; margin-bottom:20px;">Curated external documentation and references.</p>
+             <div class="resource-scroll">
+                <a href="https://developer.mozilla.org" target="_blank" class="resource-link mdn" aria-label="MDN Web Docs">
+                  <span style="font-size:32px;">🌐</span> <strong>MDN Web Docs</strong>
+                </a>
+                <a href="https://freecodecamp.org" target="_blank" class="resource-link fcc" aria-label="FreeCodeCamp">
+                  <span style="font-size:32px;">⛺</span> <strong>FreeCodeCamp</strong>
+                </a>
+                <a href="https://w3schools.com" target="_blank" class="resource-link w3" aria-label="W3Schools">
+                  <span style="font-size:32px;">🏫</span> <strong>W3Schools</strong>
+                </a>
+             </div>
+           </div>
+         </div>
+
+         <!-- Mentor Marketplace -->
+         <h4 style="color:#10b981; margin-bottom:15px; font-size:20px; display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">🛒</span> Mentor Marketplace</h4>
+         <p style="color:#cbd5e1; font-size:14px; margin-bottom:20px;">Swipe to browse available mentors. Review their stats and book a session directly!</p>
+         <div id="communityMarketplace" class="mentor-scroll-container">
+            <!-- Populated dynamically in scripts.ejs -->
          </div>
          
        </div>
+    </div>
+  </div>
+
+  <!-- Certificate Modal Container -->
+  <div id="certificateModal" class="cert-overlay" role="dialog" aria-modal="true" aria-labelledby="certTitle">
+    <div class="cert-modal">
+      <span class="cert-close" onclick="closeCertificateModal()" aria-label="Close Certificate">&times;</span>
+      
+      <div class="cert-frame" id="printableCertificate">
+        <div class="cert-logo">ABTECH <span>TUTOR</span></div>
+        <div class="cert-text" style="text-transform:uppercase; letter-spacing:3px; font-size:14px; margin-bottom:30px;">Certificate of Mastery</div>
+        
+        <div class="cert-text">This is to proudly certify that</div>
+        <div class="cert-name" id="certStudentName">Student Name</div>
+        
+        <div class="cert-text">has successfully completed all modules and challenges in</div>
+        <div class="cert-course" id="certCourseName">Web Development Foundations</div>
+        
+        <div class="cert-text">demonstrating exceptional dedication, creativity, and coding proficiency.</div>
+        
+        <div class="cert-title" id="certTitle">Mastery Achieved</div>
+        
+        <div class="cert-footer">
+          <div class="cert-sig-block">
+            <div class="cert-sig">ABTECH Mentors</div>
+            <div class="cert-text" style="font-size:12px; margin:0;">Lead Instructor</div>
+          </div>
+          
+          <div class="cert-seal" title="Official ABTECH TUTOR Seal"></div>
+          
+          <div class="cert-sig-block">
+            <div class="cert-sig" style="font-family:monospace; font-size:20px; padding-top:10px;" id="certDate">01/01/2026</div>
+            <div class="cert-text" style="font-size:12px; margin:0;">Date of Completion</div>
+          </div>
+        </div>
+        
+        <div class="cert-id" id="certId">ID: ABT-123456789</div>
+      </div>
+      
+      <div class="cert-actions">
+        <button class="cert-btn cert-btn-primary" onclick="printCertificate()">📥 Download / Print</button>
+        <button class="cert-btn cert-btn-secondary" onclick="shareCertificate()">🔗 Share on LinkedIn</button>
+      </div>
     </div>
   </div>

@@ -425,6 +425,7 @@ Format the output in clear Markdown with the following sections:
 4. **Code/Real-World Examples**: Provide concrete examples
 5. **Common Mistakes**: Pitfalls to avoid
 6. **Key Takeaways**: A quick summary
+7. **Post-Class Assignment**: 2 practical exercises for the student to play with after the note
 
 Keep it concise, professional, and ready to be used by a mentor to teach a student.`;
 
@@ -439,6 +440,70 @@ Keep it concise, professional, and ready to be used by a mentor to teach a stude
     console.error('AI Notes Error:', error);
     res.status(500).json({ error: 'Failed to generate notes' });
   }
+});
+
+// Create Slide Deck
+app.post('/api/slides', (req, res) => {
+  const { title, content } = req.body;
+  const slideId = 'slide_' + Date.now();
+  
+  // Transform sections into slides (simple parsing)
+  const sections = content.split(/\n(?=\d\.\s\*\*)/);
+  let slidesHtml = sections.map(sec => {
+      // Basic markdown to HTML for slides
+      let html = sec.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br>')
+                    .replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.1);padding:2px 6px;border-radius:4px;">$1</code>');
+      return `<div class="slide fade-in">
+                <div class="glass-panel" style="padding:40px; margin:20px; font-size:24px; line-height:1.6; text-align:left;">${html}</div>
+              </div>`;
+  }).join('');
+
+  const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${title || 'Presentation'}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+    body { font-family: 'Outfit', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0a0a0a 100%); color: #f8fafc; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
+    .slide { display: none; width: 80%; max-width: 1200px; max-height: 80vh; overflow-y: auto; text-align: center; }
+    .slide.active { display: block; }
+    .glass-panel { background: rgba(255,255,255,0.05); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    h1, h2, strong { color: #38bdf8; }
+    .controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; }
+    button { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; font-size: 20px; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #38bdf8; }
+    .fade-in { animation: fadeIn 0.5s forwards; }
+    @keyframes fadeIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+  </style>
+</head>
+<body>
+  ${slidesHtml}
+  <div class="controls">
+    <button onclick="prev()">❮</button>
+    <button onclick="next()">❯</button>
+  </div>
+  <script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+    if(slides.length > 0) slides[0].classList.add('active');
+    function show(idx) {
+      slides.forEach(s => s.classList.remove('active'));
+      slides[idx].classList.add('active');
+    }
+    function next() { if(current < slides.length - 1) { current++; show(current); } }
+    function prev() { if(current > 0) { current--; show(current); } }
+    document.addEventListener('keydown', e => {
+      if(e.key === 'ArrowRight') next();
+      if(e.key === 'ArrowLeft') prev();
+    });
+  </script>
+</body>
+</html>`;
+
+  fs.writeFileSync(path.join(__dirname, 'public/slides', slideId + '.html'), fullHtml);
+  res.json({ link: '/slides/' + slideId + '.html' });
 });
 
 // AI Weekly Family Summary Generator
@@ -513,6 +578,39 @@ app.post('/api/zoom/signature', (req, res) => {
 
   const signature = jwt.sign(payload, sdkSecret, { header: oHeader });
   res.json({ signature });
+});
+
+// Gamification and Learning Journey Integrations
+app.post('/api/student/badges', async (req, res) => {
+  const { userId, badgeId } = req.body;
+  const { data: row } = await supabase.from('progress').select('badges').eq('userId', userId).single();
+  let badges = [];
+  try { badges = JSON.parse(row?.badges || '[]'); } catch(e){}
+  if (!badges.includes(badgeId)) badges.push(badgeId);
+  
+  await supabase.from('progress').update({ badges: JSON.stringify(badges) }).eq('userId', userId);
+  res.json({ success: true, badges });
+});
+
+app.post('/api/student/kudos', async (req, res) => {
+  const { targetUserId } = req.body;
+  const { data: row } = await supabase.from('progress').select('kudosReceived').eq('userId', targetUserId).single();
+  const currentKudos = (row?.kudosReceived || 0) + 1;
+  
+  await supabase.from('progress').update({ kudosReceived: currentKudos }).eq('userId', targetUserId);
+  res.json({ success: true, kudosReceived: currentKudos });
+});
+
+app.post('/api/mentor/timeline', async (req, res) => {
+  const { studentId, assignedTracks, deadlines, mentorNotes } = req.body;
+  const updatePayload = {};
+  if (assignedTracks) updatePayload.assignedTracks = JSON.stringify(assignedTracks);
+  if (deadlines) updatePayload.deadlines = JSON.stringify(deadlines);
+  if (mentorNotes) updatePayload.mentorNotes = JSON.stringify(mentorNotes);
+  
+  const { error } = await supabase.from('progress').update(updatePayload).eq('userId', studentId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;

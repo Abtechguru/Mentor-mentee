@@ -24,7 +24,12 @@ CREATE TABLE progress (
   answers TEXT DEFAULT '{}',
   attempts TEXT DEFAULT '{}',
   "lastActiveDate" TEXT DEFAULT NULL,
-  "streakCount" INTEGER DEFAULT 0
+  "streakCount" INTEGER DEFAULT 0,
+  badges TEXT DEFAULT '[]',
+  "kudosReceived" INTEGER DEFAULT 0,
+  "assignedTracks" TEXT DEFAULT '[]',
+  deadlines TEXT DEFAULT '{}',
+  "mentorNotes" TEXT DEFAULT '{}'
 );
 
 CREATE TABLE messages (
